@@ -16,7 +16,6 @@ const Index = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session:", session);
       setSession(session);
@@ -27,7 +26,6 @@ const Index = () => {
       }
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -51,11 +49,28 @@ const Index = () => {
         .from("profiles")
         .select("role")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      console.log("User role data:", data);
-      setUserRole(data.role);
+
+      if (!data) {
+        // Profile doesn't exist, create it
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            email: session?.user?.email,
+            role: "staff", // Default role
+          });
+
+        if (insertError) throw insertError;
+        
+        setUserRole("staff");
+        console.log("Created new profile with role: staff");
+      } else {
+        console.log("User role data:", data);
+        setUserRole(data.role);
+      }
     } catch (error: any) {
       console.error("Error fetching user role:", error);
       toast({
