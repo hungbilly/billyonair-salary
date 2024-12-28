@@ -1,13 +1,16 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WorkTypeActions } from "./WorkTypeActions";
 import { AssignWorkTypeDialog } from "./AssignWorkTypeDialog";
+import { WorkType } from "./types";
 
 interface WorkTypesTableProps {
-  workTypes: any[];
+  workTypes: WorkType[];
+  onEdit: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
   onWorkTypeUpdated?: () => void;
 }
 
-export const WorkTypesTable = ({ workTypes, onWorkTypeUpdated }: WorkTypesTableProps) => {
+export const WorkTypesTable = ({ workTypes, onEdit, onDelete, onWorkTypeUpdated }: WorkTypesTableProps) => {
   return (
     <Table>
       <TableHeader>
@@ -25,7 +28,11 @@ export const WorkTypesTable = ({ workTypes, onWorkTypeUpdated }: WorkTypesTableP
             <TableCell>
               <div className="flex gap-2">
                 <AssignWorkTypeDialog workType={workType} onAssigned={onWorkTypeUpdated} />
-                <WorkTypeActions workType={workType} onWorkTypeUpdated={onWorkTypeUpdated} />
+                <WorkTypeActions 
+                  workType={workType} 
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
               </div>
             </TableCell>
           </TableRow>

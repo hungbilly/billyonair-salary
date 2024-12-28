@@ -42,6 +42,9 @@ export const WorkTypesList = () => {
           workTypes={workTypes}
           onEdit={handleUpdateWorkType}
           onDelete={handleDeleteWorkType}
+          onWorkTypeUpdated={() => {
+            // Refresh work types if needed
+          }}
         />
       </CardContent>
     </Card>
