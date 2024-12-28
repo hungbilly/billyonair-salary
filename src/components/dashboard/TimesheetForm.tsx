@@ -40,34 +40,46 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       }
 
       setIsFixedRate(data.rate_type === 'fixed');
+      // Reset hours when switching between fixed and hourly rate types
+      setHours(data.rate_type === 'fixed' ? '0' : '');
     };
 
     fetchWorkTypeRateType();
   }, [selectedWorkType]);
 
-  const handleSubmit = async () => {
-    try {
-      if (!date || !selectedWorkType || (!isFixedRate && !hours)) {
-        toast({
-          title: "Error",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
+  const validateInput = () => {
+    if (!date || !selectedWorkType) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return false;
+    }
 
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("No user found");
-
-      const hoursValue = isFixedRate ? 0 : parseFloat(hours);
-      if (!isFixedRate && hoursValue <= 0) {
+    if (!isFixedRate) {
+      const hoursValue = parseFloat(hours);
+      if (isNaN(hoursValue) || hoursValue <= 0) {
         toast({
           title: "Error",
           description: "Hours must be greater than 0 for hourly work types",
           variant: "destructive",
         });
-        return;
+        return false;
       }
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (!validateInput()) return;
+
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("No user found");
+
+      const hoursValue = isFixedRate ? 0 : parseFloat(hours);
 
       const { error } = await supabase.from("timesheets").insert({
         employee_id: userData.user.id,
@@ -84,7 +96,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       });
 
       setSelectedWorkType("");
-      setHours("");
+      setHours(isFixedRate ? "0" : "");
       setDate(new Date());
       onTimesheetAdded();
     } catch (error: any) {
