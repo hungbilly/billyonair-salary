@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
@@ -17,9 +18,12 @@ const Index = () => {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session:", session);
       setSession(session);
       if (session?.user) {
         fetchUserRole(session.user.id);
+      } else {
+        setLoading(false);
       }
     });
 
@@ -27,11 +31,13 @@ const Index = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", session);
       setSession(session);
       if (session?.user) {
         fetchUserRole(session.user.id);
       } else {
         setUserRole(null);
+        setLoading(false);
       }
     });
 
@@ -40,6 +46,7 @@ const Index = () => {
 
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log("Fetching user role for:", userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
@@ -47,8 +54,10 @@ const Index = () => {
         .single();
 
       if (error) throw error;
+      console.log("User role data:", data);
       setUserRole(data.role);
     } catch (error: any) {
+      console.error("Error fetching user role:", error);
       toast({
         title: "Error",
         description: "Failed to fetch user role",
@@ -74,8 +83,15 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">Loading...</div>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-7xl mx-auto">
+          <Skeleton className="h-12 w-32 mb-8" />
+          <div className="space-y-4">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
