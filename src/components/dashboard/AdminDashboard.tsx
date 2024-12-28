@@ -17,7 +17,41 @@ export const AdminDashboard = () => {
 
   useEffect(() => {
     fetchUsers();
+    // Set billy@billyhung.com as admin when component mounts
+    setUserAsAdmin("billy@billyhung.com");
   }, []);
+
+  const setUserAsAdmin = async (email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ role: "admin" })
+        .eq("email", email)
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        toast({
+          title: "Success",
+          description: `${email} has been set as admin`,
+        });
+        fetchUsers(); // Refresh the users list
+      } else {
+        toast({
+          title: "Error",
+          description: `User ${email} not found`,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchUsers = async () => {
     try {
