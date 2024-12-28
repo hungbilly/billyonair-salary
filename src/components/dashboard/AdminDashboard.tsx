@@ -7,6 +7,8 @@ import { DashboardCards } from "./DashboardCards";
 import { CreateWorkTypeDialog } from "./CreateWorkTypeDialog";
 import { CreateUserDialog } from "./CreateUserDialog";
 import { UserManagement } from "./UserManagement";
+import { WorkTypesList } from "./WorkTypesList";
+import { StaffList } from "./StaffList";
 
 export const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -54,6 +56,11 @@ export const AdminDashboard = () => {
         totalUsers={users.length}
         activeStaffCount={users.filter((user) => user.role === "staff").length}
       />
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <StaffList users={users} />
+        <WorkTypesList />
+      </div>
 
       <UserManagement users={users} onUserUpdated={fetchUsers} />
     </div>
