@@ -42,14 +42,26 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const createProfile = async (userId: string, userEmail: string) => {
+  const createProfile = async (userId: string, userEmail: string): Promise<"admin" | "employer" | "staff"> => {
     try {
+      // First try to get the profile again to handle race conditions
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (existingProfile) {
+        console.log("Profile already exists:", existingProfile);
+        return existingProfile.role;
+      }
+
       const { error: insertError } = await supabase
         .from("profiles")
         .insert({
           id: userId,
           email: userEmail,
-          role: "staff", // Default role
+          role: "staff" as const, // Explicitly type as const
         });
 
       if (insertError) throw insertError;
