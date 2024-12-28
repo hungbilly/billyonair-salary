@@ -61,7 +61,7 @@ const Index = () => {
         .insert({
           id: userId,
           email: userEmail,
-          role: "staff" as const, // Explicitly type as const
+          role: "staff" as const,
         });
 
       if (insertError) throw insertError;
@@ -79,11 +79,13 @@ const Index = () => {
       console.log("Fetching user role for:", userId);
       const { data, error } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, email")
         .eq("id", userId)
         .maybeSingle();
 
       if (error) throw error;
+
+      console.log("User profile data:", data);
 
       if (!data) {
         // Profile doesn't exist, create it
@@ -95,7 +97,7 @@ const Index = () => {
         const role = await createProfile(userId, userEmail);
         setUserRole(role);
       } else {
-        console.log("User role data:", data);
+        console.log("Setting user role to:", data.role);
         setUserRole(data.role);
       }
     } catch (error: any) {
