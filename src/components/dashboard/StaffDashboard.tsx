@@ -11,24 +11,34 @@ export const StaffDashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchWorkTypes();
-    fetchTimesheets();
-    fetchCurrentUser();
+    const initializeDashboard = async () => {
+      await Promise.all([
+        fetchWorkTypes(),
+        fetchTimesheets(),
+        fetchCurrentUser()
+      ]);
+    };
+
+    initializeDashboard();
   }, []);
 
   const fetchCurrentUser = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+      if (!user) return;
 
-        if (error) throw error;
-        setCurrentUser(data);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user details:", error);
+        throw error;
       }
+
+      setCurrentUser(data);
     } catch (error: any) {
       console.error("Error fetching user details:", error);
       toast({
@@ -46,7 +56,11 @@ export const StaffDashboard = () => {
         .select("*")
         .order("name");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching work types:", error);
+        throw error;
+      }
+
       setWorkTypes(data || []);
     } catch (error: any) {
       console.error("Error fetching work types:", error);
@@ -60,19 +74,25 @@ export const StaffDashboard = () => {
 
   const fetchTimesheets = async () => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
       const { data, error } = await supabase
         .from("timesheets")
         .select(`
           *,
-          work_types (name)
+          work_types (
+            name
+          )
         `)
-        .eq("employee_id", userData.user.id)
+        .eq("employee_id", user.id)
         .order("work_date", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching timesheets:", error);
+        throw error;
+      }
+
       setTimesheets(data || []);
     } catch (error: any) {
       console.error("Error fetching timesheets:", error);
