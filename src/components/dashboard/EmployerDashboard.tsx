@@ -1,15 +1,97 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Users, Clock, DollarSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PlusCircle, Users, Clock, DollarSign, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export const EmployerDashboard = () => {
+  const [workTypes, setWorkTypes] = useState<any[]>([]);
+  const [newWorkTypeName, setNewWorkTypeName] = useState("");
+  const [isAddingWorkType, setIsAddingWorkType] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchWorkTypes();
+  }, []);
+
+  const fetchWorkTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("work_types")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setWorkTypes(data || []);
+    } catch (error: any) {
+      console.error("Error fetching work types:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch work types",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddWorkType = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("No user found");
+
+      const { error } = await supabase.from("work_types").insert({
+        name: newWorkTypeName,
+        created_by: userData.user.id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Work type added successfully",
+      });
+
+      setNewWorkTypeName("");
+      setIsAddingWorkType(false);
+      fetchWorkTypes();
+    } catch (error: any) {
+      console.error("Error adding work type:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add work type",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Employer Dashboard</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Staff
-        </Button>
+        <Dialog open={isAddingWorkType} onOpenChange={setIsAddingWorkType}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Work Type
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Work Type</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Work Type Name"
+                value={newWorkTypeName}
+                onChange={(e) => setNewWorkTypeName(e.target.value)}
+              />
+              <Button onClick={handleAddWorkType} disabled={!newWorkTypeName}>
+                Add Work Type
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       
       <div className="grid gap-4 md:grid-cols-3">
@@ -43,6 +125,27 @@ export const EmployerDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Work Types</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {workTypes.map((workType) => (
+              <div
+                key={workType.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <span>{workType.name}</span>
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

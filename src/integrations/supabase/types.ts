@@ -33,6 +33,83 @@ export type Database = {
         }
         Relationships: []
       }
+      timesheets: {
+        Row: {
+          created_at: string
+          employee_id: string
+          hours: number
+          id: string
+          updated_at: string
+          work_date: string
+          work_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          hours: number
+          id?: string
+          updated_at?: string
+          work_date: string
+          work_type_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          hours?: number
+          id?: string
+          updated_at?: string
+          work_date?: string
+          work_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheets_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_types: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
