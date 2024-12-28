@@ -65,12 +65,16 @@ export const WorkTypesList = () => {
 
   const updateWorkTypeMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      console.log("Updating work type:", { id, name });
       const { error } = await supabase
         .from("work_types")
         .update({ name })
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase update error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workTypes"] });
@@ -83,7 +87,7 @@ export const WorkTypesList = () => {
       console.error("Error updating work type:", error);
       toast({
         title: "Error",
-        description: "Failed to update work type",
+        description: "Failed to update work type. Please try again.",
         variant: "destructive",
       });
     },
@@ -91,12 +95,16 @@ export const WorkTypesList = () => {
 
   const deleteWorkTypeMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log("Deleting work type:", id);
       const { error } = await supabase
         .from("work_types")
         .delete()
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase delete error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workTypes"] });
@@ -109,7 +117,7 @@ export const WorkTypesList = () => {
       console.error("Error deleting work type:", error);
       toast({
         title: "Error",
-        description: "Failed to delete work type",
+        description: "Failed to delete work type. Please try again.",
         variant: "destructive",
       });
     },
@@ -125,10 +133,12 @@ export const WorkTypesList = () => {
   }
 
   const handleUpdateWorkType = (id: string, name: string) => {
+    console.log("Handling update work type:", { id, name });
     updateWorkTypeMutation.mutate({ id, name });
   };
 
   const handleDeleteWorkType = (id: string) => {
+    console.log("Handling delete work type:", id);
     if (confirm("Are you sure you want to delete this work type?")) {
       deleteWorkTypeMutation.mutate(id);
     }

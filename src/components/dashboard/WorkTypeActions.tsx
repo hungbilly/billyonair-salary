@@ -12,25 +12,25 @@ interface WorkTypeActionsProps {
 }
 
 export const WorkTypeActions = ({ workType, onEdit, onDelete }: WorkTypeActionsProps) => {
-  const [editingWorkType, setEditingWorkType] = useState<{ id: string; name: string } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(workType.name);
 
   const handleUpdateWorkType = () => {
-    if (!editingWorkType) return;
-    onEdit(editingWorkType.id, editingWorkType.name);
-    setEditingWorkType(null);
+    onEdit(workType.id, editedName);
+    setIsEditing(false);
   };
 
   return (
     <div className="flex gap-2">
-      <Dialog 
-        open={editingWorkType?.id === workType.id} 
-        onOpenChange={(open) => !open && setEditingWorkType(null)}
-      >
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogTrigger asChild>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setEditingWorkType({ id: workType.id, name: workType.name })}
+            onClick={() => {
+              setEditedName(workType.name);
+              setIsEditing(true);
+            }}
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -42,10 +42,10 @@ export const WorkTypeActions = ({ workType, onEdit, onDelete }: WorkTypeActionsP
           <div className="space-y-4">
             <Input
               placeholder="Work Type Name"
-              value={editingWorkType?.name || ""}
-              onChange={(e) => setEditingWorkType(prev => prev ? { ...prev, name: e.target.value } : null)}
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
             />
-            <Button onClick={handleUpdateWorkType} disabled={!editingWorkType?.name}>
+            <Button onClick={handleUpdateWorkType} disabled={!editedName || editedName === workType.name}>
               Update Work Type
             </Button>
           </div>
