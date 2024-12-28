@@ -59,10 +59,20 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("No user found");
 
+      const hoursValue = isFixedRate ? 0 : parseFloat(hours);
+      if (!isFixedRate && hoursValue <= 0) {
+        toast({
+          title: "Error",
+          description: "Hours must be greater than 0 for hourly work types",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.from("timesheets").insert({
         employee_id: userData.user.id,
         work_type_id: selectedWorkType,
-        hours: isFixedRate ? 0 : parseFloat(hours),
+        hours: hoursValue,
         work_date: format(date, "yyyy-MM-dd"),
       });
 
@@ -81,7 +91,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       console.error("Error logging hours:", error);
       toast({
         title: "Error",
-        description: "Failed to log hours",
+        description: error.message || "Failed to log hours",
         variant: "destructive",
       });
     }
@@ -126,7 +136,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
               <Input
                 type="number"
                 step="0.5"
-                min="0"
+                min="0.5"
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
                 placeholder="0"
