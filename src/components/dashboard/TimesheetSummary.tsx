@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,7 +8,6 @@ interface TimesheetSummaryProps {
 
 export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
   const [workTypeRates, setWorkTypeRates] = useState<Record<string, { hourly_rate?: number; fixed_rate?: number }>>({});
-  const totalHours = timesheets.reduce((sum, timesheet) => sum + Number(timesheet.hours), 0);
   
   useEffect(() => {
     const fetchWorkTypeRates = async () => {
@@ -40,12 +38,12 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     fetchWorkTypeRates();
   }, []);
 
-  const calculateSalary = (timesheet: any) => {
-    const rates = workTypeRates[timesheet.work_type_id];
+  const calculateSalary = (hours: number, workTypeId: string) => {
+    const rates = workTypeRates[workTypeId];
     if (!rates) return null;
 
     if (rates.hourly_rate) {
-      return Number(timesheet.hours) * rates.hourly_rate;
+      return hours * rates.hourly_rate;
     }
     if (rates.fixed_rate) {
       return rates.fixed_rate;
@@ -53,9 +51,29 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     return null;
   };
 
-  const totalSalary = timesheets.reduce((sum, timesheet) => {
-    const salary = calculateSalary(timesheet);
+  // Group timesheets by work type
+  const workTypeSummaries = timesheets.reduce((acc: any, timesheet) => {
+    const workTypeId = timesheet.work_type_id;
+    if (!acc[workTypeId]) {
+      acc[workTypeId] = {
+        name: timesheet.work_types.name,
+        totalHours: 0,
+        workTypeId,
+      };
+    }
+    acc[workTypeId].totalHours += Number(timesheet.hours);
+    return acc;
+  }, {});
+
+  // Calculate total salary across all work types
+  const totalSalary = Object.values(workTypeSummaries).reduce((sum: number, summary: any) => {
+    const salary = calculateSalary(summary.totalHours, summary.workTypeId);
     return sum + (salary || 0);
+  }, 0);
+
+  // Calculate total hours across all work types
+  const totalHours = Object.values(workTypeSummaries).reduce((sum: number, summary: any) => {
+    return sum + summary.totalHours;
   }, 0);
 
   return (
@@ -66,21 +84,18 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
-            {timesheets.map((timesheet) => {
-              const rates = workTypeRates[timesheet.work_type_id];
-              const salary = calculateSalary(timesheet);
+            {Object.values(workTypeSummaries).map((summary: any) => {
+              const rates = workTypeRates[summary.workTypeId];
+              const salary = calculateSalary(summary.totalHours, summary.workTypeId);
 
               return (
                 <div
-                  key={timesheet.id}
+                  key={summary.workTypeId}
                   className="flex flex-col space-y-2 p-4 border rounded"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium">{timesheet.work_types.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(timesheet.work_date), "MMM d, yyyy")}
-                      </p>
+                      <p className="font-medium">{summary.name}</p>
                       {rates && (
                         <p className="text-sm text-muted-foreground">
                           Rate: {rates.hourly_rate ? 
@@ -92,7 +107,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">{timesheet.hours} hours</p>
+                      <p className="font-bold">{summary.totalHours} hours</p>
                       {salary !== null && (
                         <p className="text-sm font-medium text-green-600">
                           ${salary.toFixed(2)}
