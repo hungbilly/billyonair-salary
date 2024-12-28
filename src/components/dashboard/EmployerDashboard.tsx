@@ -7,11 +7,13 @@ import { PlusCircle, Users, Clock, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { WorkTypesList } from "./WorkTypesList";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const EmployerDashboard = () => {
   const [newWorkTypeName, setNewWorkTypeName] = useState("");
   const [isAddingWorkType, setIsAddingWorkType] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleAddWorkType = async () => {
     try {
@@ -32,6 +34,8 @@ export const EmployerDashboard = () => {
 
       setNewWorkTypeName("");
       setIsAddingWorkType(false);
+      // Invalidate and refetch work types query
+      queryClient.invalidateQueries({ queryKey: ["workTypes"] });
     } catch (error: any) {
       console.error("Error adding work type:", error);
       toast({
