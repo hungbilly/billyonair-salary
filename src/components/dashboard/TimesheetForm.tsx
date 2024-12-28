@@ -54,7 +54,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
 
       const isFixed = workTypeData.rate_type === 'fixed';
       setIsFixedRate(isFixed);
-      setHours(isFixed ? '0' : '');
+      setHours(isFixed ? '1' : ''); // Set to 1 for fixed rate instead of 0
 
       // Calculate and display salary based on rate type
       if (isFixed) {
@@ -100,7 +100,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("No user found");
 
-      const hoursValue = isFixedRate ? 0 : parseFloat(hours);
+      const hoursValue = isFixedRate ? 1 : parseFloat(hours); // Use 1 for fixed rate instead of 0
 
       const { error } = await supabase.from("timesheets").insert({
         employee_id: userData.user.id,
@@ -117,7 +117,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       });
 
       setSelectedWorkType("");
-      setHours(isFixedRate ? "0" : "");
+      setHours(isFixedRate ? "1" : ""); // Reset to 1 for fixed rate
       setDate(new Date());
       setSalary(null);
       onTimesheetAdded();
