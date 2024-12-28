@@ -108,8 +108,12 @@ export const StaffDashboard = () => {
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
         <div>
-          <p className="text-sm text-muted-foreground">Welcome back,</p>
-          <h1 className="text-3xl font-bold">{currentUser?.full_name || 'Staff Member'}</h1>
+          <h1 className="text-3xl font-bold">
+            {currentUser?.full_name || 'Staff Member'}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welcome back!
+          </p>
         </div>
       </div>
       
