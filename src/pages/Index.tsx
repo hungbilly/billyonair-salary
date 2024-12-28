@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { EmployerDashboard } from "@/components/dashboard/EmployerDashboard";
 import { StaffDashboard } from "@/components/dashboard/StaffDashboard";
+import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,9 @@ const Index = () => {
                 Logout
               </Button>
             </div>
-            {userRole === "employer" ? (
+            {userRole === "admin" ? (
+              <AdminDashboard />
+            ) : userRole === "employer" ? (
               <EmployerDashboard />
             ) : (
               <StaffDashboard />
