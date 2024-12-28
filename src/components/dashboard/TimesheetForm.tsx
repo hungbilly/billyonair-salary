@@ -19,33 +19,54 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
   const [hours, setHours] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isFixedRate, setIsFixedRate] = useState(false);
+  const [salary, setSalary] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchWorkTypeRateType = async () => {
       if (!selectedWorkType) {
         setIsFixedRate(false);
+        setSalary(null);
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: workTypeData, error: workTypeError } = await supabase
         .from('work_types')
         .select('rate_type')
         .eq('id', selectedWorkType)
         .single();
 
-      if (error) {
-        console.error('Error fetching work type rate type:', error);
+      if (workTypeError) {
+        console.error('Error fetching work type rate type:', workTypeError);
         return;
       }
 
-      setIsFixedRate(data.rate_type === 'fixed');
-      // Reset hours when switching between fixed and hourly rate types
-      setHours(data.rate_type === 'fixed' ? '0' : '');
+      const { data: rateData, error: rateError } = await supabase
+        .from('work_type_assignments')
+        .select('hourly_rate, fixed_rate')
+        .eq('work_type_id', selectedWorkType)
+        .single();
+
+      if (rateError) {
+        console.error('Error fetching rate:', rateError);
+        return;
+      }
+
+      const isFixed = workTypeData.rate_type === 'fixed';
+      setIsFixedRate(isFixed);
+      setHours(isFixed ? '0' : '');
+
+      // Calculate and display salary based on rate type
+      if (isFixed) {
+        setSalary(rateData.fixed_rate || 0);
+      } else {
+        const hoursValue = parseFloat(hours) || 0;
+        setSalary(hoursValue * (rateData.hourly_rate || 0));
+      }
     };
 
     fetchWorkTypeRateType();
-  }, [selectedWorkType]);
+  }, [selectedWorkType, hours]);
 
   const validateInput = () => {
     if (!date || !selectedWorkType) {
@@ -92,12 +113,13 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
 
       toast({
         title: "Success",
-        description: "Hours logged successfully",
+        description: `Salary logged: $${salary?.toFixed(2)}`,
       });
 
       setSelectedWorkType("");
       setHours(isFixedRate ? "0" : "");
       setDate(new Date());
+      setSalary(null);
       onTimesheetAdded();
     } catch (error: any) {
       console.error("Error logging hours:", error);
@@ -112,7 +134,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Log Hours</CardTitle>
+        <CardTitle>Log Salary</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4">
@@ -155,8 +177,14 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
               />
             </div>
           )}
+
+          {salary !== null && (
+            <div className="text-lg font-semibold text-green-600">
+              Estimated Salary: ${salary.toFixed(2)}
+            </div>
+          )}
           
-          <Button onClick={handleSubmit}>Log Hours</Button>
+          <Button onClick={handleSubmit}>Log Salary</Button>
         </div>
       </CardContent>
     </Card>
