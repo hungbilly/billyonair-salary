@@ -29,6 +29,22 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
 
   const fetchStaffList = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // First check if the current user is an employer
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      
+      if (profile.role !== 'employer' && profile.role !== 'admin') {
+        throw new Error("Only employers can assign work types");
+      }
+
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, email")
@@ -40,9 +56,10 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
       console.error("Error fetching staff:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch staff list",
+        description: error.message || "Failed to fetch staff list",
         variant: "destructive",
       });
+      setIsOpen(false);
     }
   };
 
@@ -65,6 +82,22 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
           variant: "destructive",
         });
         return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Verify user is an employer before proceeding
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      
+      if (profile.role !== 'employer' && profile.role !== 'admin') {
+        throw new Error("Only employers can assign work types");
       }
 
       const { error } = await supabase.from("work_type_assignments").insert({
