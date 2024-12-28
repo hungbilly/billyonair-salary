@@ -4,3 +4,16 @@ export interface WorkType {
   rate_type: string;
   created_at: string;
 }
+
+export interface WorkTypeSummary {
+  name: string;
+  totalHours: number;
+  workTypeId: string;
+}
+
+export interface WorkTypeRates {
+  [key: string]: {
+    hourly_rate?: number;
+    fixed_rate?: number;
+  };
+}

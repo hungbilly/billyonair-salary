@@ -1,22 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { WorkTypeSummary, WorkTypeRates } from "./types";
+import { WorkTypeSummaryItem } from "./WorkTypeSummaryItem";
+import { TimesheetSummaryFooter } from "./TimesheetSummaryFooter";
 
 interface TimesheetSummaryProps {
   timesheets: any[];
-}
-
-interface WorkTypeSummary {
-  name: string;
-  totalHours: number;
-  workTypeId: string;
-}
-
-interface WorkTypeRates {
-  [key: string]: {
-    hourly_rate?: number;
-    fixed_rate?: number;
-  };
 }
 
 export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
@@ -84,7 +74,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     return sum + (salary || 0);
   }, 0);
 
-  // Calculate total hours across all work types
+  // Calculate total hours/jobs across all work types
   const totalHours = Object.values(workTypeSummaries).reduce((sum: number, summary) => {
     return sum + summary.totalHours;
   }, 0);
@@ -97,51 +87,18 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
-            {Object.values(workTypeSummaries).map((summary) => {
-              const rates = workTypeRates[summary.workTypeId];
-              const salary = calculateSalary(summary.totalHours, summary.workTypeId);
-
-              return (
-                <div
-                  key={summary.workTypeId}
-                  className="flex flex-col space-y-2 p-4 border rounded"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{summary.name}</p>
-                      {rates && (
-                        <p className="text-sm text-muted-foreground">
-                          Rate: {rates.hourly_rate ? 
-                            `$${rates.hourly_rate}/hour` : 
-                            rates.fixed_rate ? 
-                            `$${rates.fixed_rate} fixed` : 
-                            'Not set'}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{summary.totalHours} hours</p>
-                      {salary !== null && (
-                        <p className="text-sm font-medium text-green-600">
-                          ${salary.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {Object.values(workTypeSummaries).map((summary) => (
+              <WorkTypeSummaryItem
+                key={summary.workTypeId}
+                {...summary}
+                workTypeRates={workTypeRates}
+              />
+            ))}
           </div>
-          <div className="flex justify-between pt-4 border-t">
-            <div className="space-y-1">
-              <p className="font-medium">Total Hours:</p>
-              <p className="font-medium">Total Salary:</p>
-            </div>
-            <div className="text-right space-y-1">
-              <p className="font-bold">{totalHours}</p>
-              <p className="font-bold text-green-600">${totalSalary.toFixed(2)}</p>
-            </div>
-          </div>
+          <TimesheetSummaryFooter
+            totalHours={totalHours}
+            totalSalary={totalSalary}
+          />
         </div>
       </CardContent>
     </Card>
