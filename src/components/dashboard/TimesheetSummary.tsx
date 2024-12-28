@@ -6,8 +6,21 @@ interface TimesheetSummaryProps {
   timesheets: any[];
 }
 
+interface WorkTypeSummary {
+  name: string;
+  totalHours: number;
+  workTypeId: string;
+}
+
+interface WorkTypeRates {
+  [key: string]: {
+    hourly_rate?: number;
+    fixed_rate?: number;
+  };
+}
+
 export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
-  const [workTypeRates, setWorkTypeRates] = useState<Record<string, { hourly_rate?: number; fixed_rate?: number }>>({});
+  const [workTypeRates, setWorkTypeRates] = useState<WorkTypeRates>({});
   
   useEffect(() => {
     const fetchWorkTypeRates = async () => {
@@ -24,7 +37,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
         return;
       }
 
-      const ratesMap = data.reduce((acc: any, curr) => {
+      const ratesMap = data.reduce((acc: WorkTypeRates, curr) => {
         acc[curr.work_type_id] = {
           hourly_rate: curr.hourly_rate,
           fixed_rate: curr.fixed_rate,
@@ -38,7 +51,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     fetchWorkTypeRates();
   }, []);
 
-  const calculateSalary = (hours: number, workTypeId: string) => {
+  const calculateSalary = (hours: number, workTypeId: string): number | null => {
     const rates = workTypeRates[workTypeId];
     if (!rates) return null;
 
@@ -52,7 +65,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
   };
 
   // Group timesheets by work type
-  const workTypeSummaries = timesheets.reduce((acc: any, timesheet) => {
+  const workTypeSummaries = timesheets.reduce<Record<string, WorkTypeSummary>>((acc, timesheet) => {
     const workTypeId = timesheet.work_type_id;
     if (!acc[workTypeId]) {
       acc[workTypeId] = {
@@ -66,13 +79,13 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
   }, {});
 
   // Calculate total salary across all work types
-  const totalSalary = Object.values(workTypeSummaries).reduce((sum: number, summary: any) => {
+  const totalSalary = Object.values(workTypeSummaries).reduce((sum: number, summary) => {
     const salary = calculateSalary(summary.totalHours, summary.workTypeId);
     return sum + (salary || 0);
   }, 0);
 
   // Calculate total hours across all work types
-  const totalHours = Object.values(workTypeSummaries).reduce((sum: number, summary: any) => {
+  const totalHours = Object.values(workTypeSummaries).reduce((sum: number, summary) => {
     return sum + summary.totalHours;
   }, 0);
 
@@ -84,7 +97,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
       <CardContent>
         <div className="space-y-4">
           <div className="space-y-2">
-            {Object.values(workTypeSummaries).map((summary: any) => {
+            {Object.values(workTypeSummaries).map((summary) => {
               const rates = workTypeRates[summary.workTypeId];
               const salary = calculateSalary(summary.totalHours, summary.workTypeId);
 
