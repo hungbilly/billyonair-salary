@@ -70,6 +70,21 @@ export const WorkTypesList = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       
+      // First check if the user is the creator of the work type
+      const { data: workType } = await supabase
+        .from("work_types")
+        .select("created_by")
+        .eq("id", id)
+        .single();
+
+      if (!workType) {
+        throw new Error("Work type not found");
+      }
+
+      if (workType.created_by !== user.id) {
+        throw new Error("You can only edit work types that you created");
+      }
+      
       const { error } = await supabase
         .from("work_types")
         .update({ 
@@ -91,11 +106,11 @@ export const WorkTypesList = () => {
         description: "Work type updated successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error updating work type:", error);
       toast({
         title: "Error",
-        description: "Failed to update work type. Please try again.",
+        description: error.message || "Failed to update work type. Please try again.",
         variant: "destructive",
       });
     },
@@ -107,6 +122,21 @@ export const WorkTypesList = () => {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      
+      // First check if the user is the creator of the work type
+      const { data: workType } = await supabase
+        .from("work_types")
+        .select("created_by")
+        .eq("id", id)
+        .single();
+
+      if (!workType) {
+        throw new Error("Work type not found");
+      }
+
+      if (workType.created_by !== user.id) {
+        throw new Error("You can only delete work types that you created");
+      }
       
       const { error } = await supabase
         .from("work_types")
@@ -126,11 +156,11 @@ export const WorkTypesList = () => {
         description: "Work type deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error deleting work type:", error);
       toast({
         title: "Error",
-        description: "Failed to delete work type. Please try again.",
+        description: error.message || "Failed to delete work type. Please try again.",
         variant: "destructive",
       });
     },
