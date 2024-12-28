@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,14 +18,39 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
   const [selectedWorkType, setSelectedWorkType] = useState("");
   const [hours, setHours] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [isFixedRate, setIsFixedRate] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchWorkTypeRateType = async () => {
+      if (!selectedWorkType) {
+        setIsFixedRate(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('work_types')
+        .select('rate_type')
+        .eq('id', selectedWorkType)
+        .single();
+
+      if (error) {
+        console.error('Error fetching work type rate type:', error);
+        return;
+      }
+
+      setIsFixedRate(data.rate_type === 'fixed');
+    };
+
+    fetchWorkTypeRateType();
+  }, [selectedWorkType]);
 
   const handleSubmit = async () => {
     try {
-      if (!date || !selectedWorkType || !hours) {
+      if (!date || !selectedWorkType || (!isFixedRate && !hours)) {
         toast({
           title: "Error",
-          description: "Please fill in all fields",
+          description: "Please fill in all required fields",
           variant: "destructive",
         });
         return;
@@ -37,7 +62,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       const { error } = await supabase.from("timesheets").insert({
         employee_id: userData.user.id,
         work_type_id: selectedWorkType,
-        hours: parseFloat(hours),
+        hours: isFixedRate ? 0 : parseFloat(hours),
         work_date: format(date, "yyyy-MM-dd"),
       });
 
@@ -95,17 +120,19 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
             />
           </div>
           
-          <div className="grid gap-2">
-            <Label>Hours</Label>
-            <Input
-              type="number"
-              step="0.5"
-              min="0"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              placeholder="0"
-            />
-          </div>
+          {!isFixedRate && (
+            <div className="grid gap-2">
+              <Label>Hours</Label>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+                placeholder="0"
+              />
+            </div>
+          )}
           
           <Button onClick={handleSubmit}>Log Hours</Button>
         </div>
