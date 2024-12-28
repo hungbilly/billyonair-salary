@@ -7,13 +7,23 @@ import {
 } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+interface Timesheet {
+  id: string;
+  work_date: string;
+  hours: number;
+  work_types: {
+    name: string;
+    rate_type: 'fixed' | 'hourly';
+  };
+}
+
 interface MonthlySubmissionsProps {
-  timesheets: any[];
+  timesheets: Timesheet[];
 }
 
 export const MonthlySubmissions = ({ timesheets }: MonthlySubmissionsProps) => {
   // Group timesheets by month
-  const monthlyTimesheets = timesheets.reduce((acc: Record<string, any[]>, timesheet) => {
+  const monthlyTimesheets = timesheets.reduce((acc: Record<string, Timesheet[]>, timesheet) => {
     const monthKey = format(new Date(timesheet.work_date), "MMMM yyyy");
     if (!acc[monthKey]) {
       acc[monthKey] = [];
