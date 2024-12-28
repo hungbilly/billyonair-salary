@@ -19,6 +19,22 @@ export const EmployerDashboard = () => {
 
   const fetchWorkTypes = async () => {
     try {
+      // First get the user's profile to check their role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile) throw new Error("Profile not found");
+      
+      if (profile.role !== "employer") {
+        throw new Error("Unauthorized: Only employers can access this dashboard");
+      }
+
       const { data, error } = await supabase
         .from("work_types")
         .select("*")
@@ -30,7 +46,7 @@ export const EmployerDashboard = () => {
       console.error("Error fetching work types:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch work types",
+        description: error.message || "Failed to fetch work types",
         variant: "destructive",
       });
     }
