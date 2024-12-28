@@ -42,6 +42,26 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const createProfile = async (userId: string, userEmail: string) => {
+    try {
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          email: userEmail,
+          role: "staff", // Default role
+        });
+
+      if (insertError) throw insertError;
+      
+      console.log("Created new profile with role: staff");
+      return "staff";
+    } catch (error: any) {
+      console.error("Error creating profile:", error);
+      throw error;
+    }
+  };
+
   const fetchUserRole = async (userId: string) => {
     try {
       console.log("Fetching user role for:", userId);
@@ -55,18 +75,13 @@ const Index = () => {
 
       if (!data) {
         // Profile doesn't exist, create it
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert({
-            id: userId,
-            email: session?.user?.email,
-            role: "staff", // Default role
-          });
-
-        if (insertError) throw insertError;
+        const userEmail = session?.user?.email;
+        if (!userEmail) {
+          throw new Error("User email not found");
+        }
         
-        setUserRole("staff");
-        console.log("Created new profile with role: staff");
+        const role = await createProfile(userId, userEmail);
+        setUserRole(role);
       } else {
         console.log("User role data:", data);
         setUserRole(data.role);
