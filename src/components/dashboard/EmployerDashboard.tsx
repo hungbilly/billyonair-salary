@@ -1,56 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PlusCircle, Users, Clock, DollarSign, Trash2 } from "lucide-react";
+import { PlusCircle, Users, Clock, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { WorkTypesList } from "./WorkTypesList";
 
 export const EmployerDashboard = () => {
-  const [workTypes, setWorkTypes] = useState<any[]>([]);
   const [newWorkTypeName, setNewWorkTypeName] = useState("");
   const [isAddingWorkType, setIsAddingWorkType] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchWorkTypes();
-  }, []);
-
-  const fetchWorkTypes = async () => {
-    try {
-      // First get the user's profile to check their role
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (!profile) throw new Error("Profile not found");
-      
-      if (profile.role !== "employer") {
-        throw new Error("Unauthorized: Only employers can access this dashboard");
-      }
-
-      const { data, error } = await supabase
-        .from("work_types")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setWorkTypes(data || []);
-    } catch (error: any) {
-      console.error("Error fetching work types:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch work types",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleAddWorkType = async () => {
     try {
@@ -71,7 +32,6 @@ export const EmployerDashboard = () => {
 
       setNewWorkTypeName("");
       setIsAddingWorkType(false);
-      fetchWorkTypes();
     } catch (error: any) {
       console.error("Error adding work type:", error);
       toast({
@@ -142,26 +102,7 @@ export const EmployerDashboard = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Work Types</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {workTypes.map((workType) => (
-              <div
-                key={workType.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <span>{workType.name}</span>
-                <Button variant="ghost" size="icon">
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <WorkTypesList />
     </div>
   );
 };
