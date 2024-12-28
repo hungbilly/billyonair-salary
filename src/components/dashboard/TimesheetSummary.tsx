@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { WorkTypeSummary, WorkTypeRates } from "./types";
 import { WorkTypeSummaryItem } from "./WorkTypeSummaryItem";
 import { TimesheetSummaryFooter } from "./TimesheetSummaryFooter";
+import { MonthlySubmissions } from "./MonthlySubmissions";
+import { Separator } from "@/components/ui/separator";
 
 interface TimesheetSummaryProps {
   timesheets: any[];
@@ -80,7 +82,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
         <CardTitle>This Month's Summary</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="space-y-2">
             {Object.values(workTypeSummaries).map((summary) => (
               <WorkTypeSummaryItem
@@ -93,6 +95,11 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
           <TimesheetSummaryFooter
             totalSalary={totalSalary}
           />
+          <Separator className="my-6" />
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Submission History</h3>
+            <MonthlySubmissions timesheets={timesheets} />
+          </div>
         </div>
       </CardContent>
     </Card>
