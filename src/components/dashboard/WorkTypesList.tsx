@@ -5,12 +5,43 @@ import { Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const WorkTypesList = () => {
-  const { data: workTypes, isLoading } = useQuery({
+  const { data: workTypes, isLoading, error } = useQuery({
     queryKey: ["workTypes"],
     queryFn: async () => {
+      // First get the user's profile to check their role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile) throw new Error("Profile not found");
+
+      // If user is an employer, fetch all work types
+      if (profile.role === "employer") {
+        const { data, error } = await supabase
+          .from("work_types")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return data;
+      }
+
+      // If user is staff, fetch only assigned work types
       const { data, error } = await supabase
         .from("work_types")
-        .select("*")
+        .select(`
+          *,
+          work_type_assignments!inner (
+            hourly_rate,
+            fixed_rate
+          )
+        `)
+        .eq("work_type_assignments.staff_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -20,6 +51,11 @@ export const WorkTypesList = () => {
 
   if (isLoading) {
     return <div>Loading work types...</div>;
+  }
+
+  if (error) {
+    console.error("Error loading work types:", error);
+    return <div>Error loading work types</div>;
   }
 
   return (

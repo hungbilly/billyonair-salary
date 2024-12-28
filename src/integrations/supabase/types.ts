@@ -87,6 +87,51 @@ export type Database = {
           },
         ]
       }
+      work_type_assignments: {
+        Row: {
+          created_at: string
+          fixed_rate: number | null
+          hourly_rate: number | null
+          id: string
+          staff_id: string
+          updated_at: string
+          work_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          fixed_rate?: number | null
+          hourly_rate?: number | null
+          id?: string
+          staff_id: string
+          updated_at?: string
+          work_type_id: string
+        }
+        Update: {
+          created_at?: string
+          fixed_rate?: number | null
+          hourly_rate?: number | null
+          id?: string
+          staff_id?: string
+          updated_at?: string
+          work_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_type_assignments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_type_assignments_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_types: {
         Row: {
           created_at: string
