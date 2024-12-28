@@ -12,12 +12,36 @@ import { StaffList } from "./StaffList";
 
 export const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
+    fetchCurrentUser();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+        setCurrentUser(data);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch user details",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -41,8 +65,11 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
+        <div>
+          <p className="text-sm text-muted-foreground">Welcome back,</p>
+          <h1 className="text-3xl font-bold">{currentUser?.full_name || 'Admin'}</h1>
+        </div>
         <div className="flex gap-2">
           <CreateUserDialog onUserCreated={fetchUsers} />
           <CreateWorkTypeDialog />
