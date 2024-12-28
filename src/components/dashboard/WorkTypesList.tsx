@@ -66,10 +66,18 @@ export const WorkTypesList = () => {
   const updateWorkTypeMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       console.log("Updating work type:", { id, name });
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
       const { error } = await supabase
         .from("work_types")
-        .update({ name })
-        .eq("id", id);
+        .update({ 
+          name,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", id)
+        .eq("created_by", user.id);
 
       if (error) {
         console.error("Supabase update error:", error);
@@ -96,10 +104,15 @@ export const WorkTypesList = () => {
   const deleteWorkTypeMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log("Deleting work type:", id);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
       const { error } = await supabase
         .from("work_types")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("created_by", user.id);
 
       if (error) {
         console.error("Supabase delete error:", error);
