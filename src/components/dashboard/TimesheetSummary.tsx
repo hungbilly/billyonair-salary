@@ -74,11 +74,6 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     return sum + (salary || 0);
   }, 0);
 
-  // Calculate total hours/jobs across all work types
-  const totalHours = Object.values(workTypeSummaries).reduce((sum: number, summary) => {
-    return sum + summary.totalHours;
-  }, 0);
-
   return (
     <Card>
       <CardHeader>
@@ -96,7 +91,6 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
             ))}
           </div>
           <TimesheetSummaryFooter
-            totalHours={totalHours}
             totalSalary={totalSalary}
           />
         </div>
