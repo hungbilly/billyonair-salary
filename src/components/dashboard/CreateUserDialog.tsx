@@ -14,12 +14,23 @@ type UserRole = Database["public"]["Enums"]["user_role"];
 export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState<UserRole>("staff");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const createUser = async () => {
     try {
+      if (!email || !password || !fullName) {
+        toast({
+          title: "Error",
+          description: "Name, email and password are required",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create the user in auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -29,10 +40,14 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create user");
 
-      // Update the user's role in profiles
+      // Update the user's profile
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ role })
+        .update({ 
+          role,
+          full_name: fullName,
+          phone_number: phoneNumber || null,
+        })
         .eq("id", authData.user.id);
 
       if (profileError) throw profileError;
@@ -44,6 +59,8 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
 
       setEmail("");
       setPassword("");
+      setFullName("");
+      setPhoneNumber("");
       setRole("staff");
       setIsDialogOpen(false);
       onUserCreated();
@@ -69,7 +86,16 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="fullName">Full Name *</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter full name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
@@ -79,13 +105,23 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Password *</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Enter phone number"
             />
           </div>
           <div className="space-y-2">

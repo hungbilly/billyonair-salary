@@ -13,21 +13,30 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          full_name: string
           id: string
+          payment_details: Json | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
+          full_name?: string
           id: string
+          payment_details?: Json | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
+          full_name?: string
           id?: string
+          payment_details?: Json | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
