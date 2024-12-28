@@ -15,12 +15,37 @@ export const StaffDashboard = () => {
   const [hours, setHours] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [timesheets, setTimesheets] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchWorkTypes();
     fetchTimesheets();
+    fetchCurrentUser();
   }, []);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+        setCurrentUser(data);
+      }
+    } catch (error: any) {
+      console.error("Error fetching user details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch user details",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchWorkTypes = async () => {
     try {
@@ -113,7 +138,12 @@ export const StaffDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Staff Dashboard</h1>
+      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
+        <div>
+          <p className="text-sm text-muted-foreground">Welcome back,</p>
+          <h1 className="text-3xl font-bold">{currentUser?.full_name || 'Staff Member'}</h1>
+        </div>
+      </div>
       
       <Card>
         <CardHeader>
