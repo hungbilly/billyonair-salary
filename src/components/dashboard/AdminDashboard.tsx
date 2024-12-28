@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, UserCheck, Settings } from "lucide-react";
+import { Users, UserCheck, Settings, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import type { Database } from "@/integrations/supabase/types";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
 
@@ -13,11 +16,13 @@ export const AdminDashboard = () => {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [workTypeName, setWorkTypeName] = useState("");
+  const [rateType, setRateType] = useState<"hourly" | "fixed">("hourly");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
-    // Set billy@billyhung.com as admin when component mounts
     setUserAsAdmin("billy@billyhung.com");
   }, []);
 
@@ -98,13 +103,87 @@ export const AdminDashboard = () => {
     }
   };
 
+  const createWorkType = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("work_types")
+        .insert({
+          name: workTypeName,
+          rate_type: rateType,
+          created_by: userData.user.id,
+        })
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Work type created successfully",
+      });
+
+      // Reset form and close dialog
+      setWorkTypeName("");
+      setRateType("hourly");
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Button variant="outline">
-          <Settings className="mr-2 h-4 w-4" /> Settings
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Create Work Type
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Work Type</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="workTypeName">Work Type Name</Label>
+                  <Input
+                    id="workTypeName"
+                    value={workTypeName}
+                    onChange={(e) => setWorkTypeName(e.target.value)}
+                    placeholder="Enter work type name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rateType">Rate Type</Label>
+                  <Select value={rateType} onValueChange={(value: "hourly" | "fixed") => setRateType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select rate type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="fixed">Fixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={createWorkType} className="w-full">
+                  Create Work Type
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button variant="outline">
+            <Settings className="mr-2 h-4 w-4" /> Settings
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
