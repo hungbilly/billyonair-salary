@@ -1,16 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Briefcase, Pencil, Trash2 } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { WorkTypesTable } from "./WorkTypesTable";
+import { WorkType } from "./types";
 
 export const WorkTypesList = () => {
-  const [editingWorkType, setEditingWorkType] = useState<{ id: string; name: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -82,7 +78,6 @@ export const WorkTypesList = () => {
         title: "Success",
         description: "Work type updated successfully",
       });
-      setEditingWorkType(null);
     },
     onError: (error) => {
       console.error("Error updating work type:", error);
@@ -129,9 +124,8 @@ export const WorkTypesList = () => {
     return <div>Error loading work types</div>;
   }
 
-  const handleUpdateWorkType = () => {
-    if (!editingWorkType) return;
-    updateWorkTypeMutation.mutate(editingWorkType);
+  const handleUpdateWorkType = (id: string, name: string) => {
+    updateWorkTypeMutation.mutate({ id, name });
   };
 
   const handleDeleteWorkType = (id: string) => {
@@ -151,62 +145,11 @@ export const WorkTypesList = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Rate Type</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {workTypes?.map((workType) => (
-              <TableRow key={workType.id}>
-                <TableCell>{workType.name}</TableCell>
-                <TableCell className="capitalize">{workType.rate_type}</TableCell>
-                <TableCell>{new Date(workType.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Dialog open={editingWorkType?.id === workType.id} onOpenChange={(open) => !open && setEditingWorkType(null)}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingWorkType({ id: workType.id, name: workType.name })}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edit Work Type</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <Input
-                            placeholder="Work Type Name"
-                            value={editingWorkType?.name || ""}
-                            onChange={(e) => setEditingWorkType(prev => prev ? { ...prev, name: e.target.value } : null)}
-                          />
-                          <Button onClick={handleUpdateWorkType} disabled={!editingWorkType?.name}>
-                            Update Work Type
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteWorkType(workType.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <WorkTypesTable
+          workTypes={workTypes as WorkType[]}
+          onEdit={handleUpdateWorkType}
+          onDelete={handleDeleteWorkType}
+        />
       </CardContent>
     </Card>
   );
