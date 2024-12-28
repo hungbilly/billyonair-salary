@@ -100,13 +100,29 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
         throw new Error("Only employers can assign work types");
       }
 
-      const { error } = await supabase.from("work_type_assignments").insert({
-        work_type_id: workType.id,
-        staff_id: selectedStaff,
-        [workType.rate_type === "hourly" ? "hourly_rate" : "fixed_rate"]: rateValue,
-      });
+      // Check if assignment already exists
+      const { data: existingAssignment, error: checkError } = await supabase
+        .from("work_type_assignments")
+        .select("id")
+        .eq("work_type_id", workType.id)
+        .eq("staff_id", selectedStaff)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (checkError) throw checkError;
+
+      if (existingAssignment) {
+        throw new Error("This staff member is already assigned to this work type");
+      }
+
+      const { error: insertError } = await supabase
+        .from("work_type_assignments")
+        .insert({
+          work_type_id: workType.id,
+          staff_id: selectedStaff,
+          [workType.rate_type === "hourly" ? "hourly_rate" : "fixed_rate"]: rateValue,
+        });
+
+      if (insertError) throw insertError;
 
       toast({
         title: "Success",
