@@ -98,7 +98,10 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
           <Separator className="my-6" />
           <div>
             <h3 className="text-lg font-semibold mb-4">Submission History</h3>
-            <MonthlySubmissions timesheets={timesheets} />
+            <MonthlySubmissions 
+              timesheets={timesheets} 
+              workTypeRates={workTypeRates}
+            />
           </div>
         </div>
       </CardContent>
