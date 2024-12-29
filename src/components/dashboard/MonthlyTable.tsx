@@ -10,7 +10,7 @@ import { TimesheetTableRow } from "./TimesheetTableRow";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { TimesheetForm } from "./TimesheetForm";
-import { calculateSalary } from "@/utils/salary";
+import { calculateTotalSalary } from "@/utils/salaryCalculations";
 
 interface Timesheet {
   id: string;
@@ -31,20 +31,12 @@ interface MonthlyTableProps {
   onTimesheetUpdated: () => void;
 }
 
-export const MonthlyTable = ({ timesheets, workTypeRates, onTimesheetUpdated }: MonthlyTableProps) => {
+export const MonthlyTable = ({ 
+  timesheets, 
+  workTypeRates, 
+  onTimesheetUpdated 
+}: MonthlyTableProps) => {
   const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
-
-  const calculateMonthlyTotal = (sheets: Timesheet[]): number => {
-    return sheets.reduce((total, sheet) => {
-      const rates = workTypeRates[sheet.work_type_id];
-      const salary = calculateSalary(
-        sheet.hours,
-        sheet.work_types.rate_type,
-        rates
-      );
-      return total + salary;
-    }, 0);
-  };
 
   return (
     <>
@@ -74,7 +66,7 @@ export const MonthlyTable = ({ timesheets, workTypeRates, onTimesheetUpdated }: 
               Monthly Total:
             </TableCell>
             <TableCell className="text-right text-green-600">
-              ${calculateMonthlyTotal(timesheets).toFixed(2)}
+              ${calculateTotalSalary(timesheets, workTypeRates).toFixed(2)}
             </TableCell>
             <TableCell />
           </TableRow>

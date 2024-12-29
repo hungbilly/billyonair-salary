@@ -6,6 +6,7 @@ import { WorkTypeSummaryItem } from "./WorkTypeSummaryItem";
 import { TimesheetSummaryFooter } from "./TimesheetSummaryFooter";
 import { MonthlySubmissions } from "./MonthlySubmissions";
 import { Separator } from "@/components/ui/separator";
+import { calculateTotalSalary } from "@/utils/salaryCalculations";
 
 interface TimesheetSummaryProps {
   timesheets: any[];
@@ -58,18 +59,8 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     return acc;
   }, {});
 
-  // Calculate total salary by summing up individual work type salaries
-  const totalSalary = Object.values(workTypeSummaries).reduce((total, summary) => {
-    const rates = workTypeRates[summary.workTypeId];
-    if (!rates) return total;
-
-    if (summary.rateType === 'fixed' && rates.fixed_rate) {
-      return total + (summary.totalHours * rates.fixed_rate);
-    } else if (rates.hourly_rate) {
-      return total + (summary.totalHours * rates.hourly_rate);
-    }
-    return total;
-  }, 0);
+  // Calculate total salary using the utility function
+  const totalSalary = calculateTotalSalary(timesheets, workTypeRates);
 
   return (
     <Card>
