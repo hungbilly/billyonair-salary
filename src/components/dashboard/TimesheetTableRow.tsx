@@ -41,10 +41,10 @@ export const TimesheetTableRow = ({
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
   
-  // Determine if it's a fixed rate by checking the work_types.rate_type
-  const isFixedRate = work_types.rate_type === 'fixed';
+  // Determine if it's a fixed rate by checking if fixed_rate exists
+  const isFixedRate = rates?.fixed_rate != null;
   
-  // Calculate rate based on rate type
+  // Calculate rate based on whether fixed_rate exists
   const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
   
   console.log('Rate calculation details:', {
