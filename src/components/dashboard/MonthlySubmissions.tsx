@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/accordion";
 import { MonthlyTable } from "./MonthlyTable";
 import { calculateSalary } from "@/utils/salary";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface Timesheet {
   id: string;
@@ -39,11 +41,12 @@ export const MonthlySubmissions = ({ timesheets, workTypeRates }: MonthlySubmiss
 
   const calculateMonthlyTotal = (sheets: Timesheet[]): number => {
     return sheets.reduce((total, sheet) => {
-      return total + calculateSalary(
+      const salary = calculateSalary(
         sheet.hours,
         sheet.work_types.rate_type,
         workTypeRates[sheet.work_type_id]
       );
+      return total + salary;
     }, 0);
   };
 
