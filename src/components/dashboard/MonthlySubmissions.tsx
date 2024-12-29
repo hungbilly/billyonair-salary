@@ -41,28 +41,16 @@ export const MonthlySubmissions = ({
     return acc;
   }, {});
 
-  // Calculate monthly total by simply summing up entry totals
+  // Calculate monthly total by summing up entry totals
   const calculateMonthTotal = (sheets: Timesheet[]) => {
-    console.log('Calculating monthly total for sheets:', sheets);
     return sheets.reduce((total, timesheet) => {
       const rates = workTypeRates[timesheet.work_type_id];
       const rate = timesheet.work_types.rate_type === 'fixed' 
         ? rates?.fixed_rate 
         : rates?.hourly_rate;
       
-      console.log('Entry calculation:', {
-        date: timesheet.work_date,
-        workType: timesheet.work_types.name,
-        hours: timesheet.hours,
-        rate: rate,
-        entryTotal: rate ? rate * timesheet.hours : 0
-      });
-      
-      if (!rate) return total;
-      
-      const newTotal = total + (rate * timesheet.hours);
-      console.log('Running total:', newTotal);
-      return newTotal;
+      const entryTotal = rate ? rate * timesheet.hours : 0;
+      return total + entryTotal;
     }, 0);
   };
 
@@ -70,7 +58,6 @@ export const MonthlySubmissions = ({
     <Accordion type="single" collapsible className="w-full">
       {Object.entries(monthlyTimesheets).map(([month, sheets]) => {
         const monthTotal = calculateMonthTotal(sheets);
-        console.log(`Total for ${month}:`, monthTotal);
         return (
           <AccordionItem value={month} key={month}>
             <AccordionTrigger className="text-lg font-semibold">
