@@ -22,6 +22,7 @@ export const TimeInputs = ({
           type="time"
           value={startTime}
           onChange={(e) => onStartTimeChange(e.target.value)}
+          step="900" // 15 minutes in seconds (15 * 60)
         />
       </div>
       <div className="grid gap-2">
@@ -30,6 +31,7 @@ export const TimeInputs = ({
           type="time"
           value={endTime}
           onChange={(e) => onEndTimeChange(e.target.value)}
+          step="900" // 15 minutes in seconds (15 * 60)
         />
       </div>
     </div>
