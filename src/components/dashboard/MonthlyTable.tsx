@@ -10,8 +10,6 @@ import { TimesheetTableRow } from "./TimesheetTableRow";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { TimesheetForm } from "./TimesheetForm";
-import { calculateTotalSalary } from "@/utils/salaryCalculations";
-import { format } from "date-fns";
 
 interface Timesheet {
   id: string;
@@ -39,7 +37,15 @@ export const MonthlyTable = ({
 }: MonthlyTableProps) => {
   const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
 
-  const monthTotal = calculateTotalSalary(timesheets, workTypeRates);
+  // Calculate monthly total by summing up all entry totals
+  const monthTotal = timesheets.reduce((total, timesheet) => {
+    const rates = workTypeRates[timesheet.work_type_id];
+    const rate = timesheet.work_types.rate_type === 'fixed' 
+      ? rates?.fixed_rate 
+      : rates?.hourly_rate;
+    const entryTotal = (rate || 0) * timesheet.hours;
+    return total + entryTotal;
+  }, 0);
 
   return (
     <>
