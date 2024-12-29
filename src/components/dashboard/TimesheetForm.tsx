@@ -13,14 +13,24 @@ import { JobsHoursInput } from "./JobsHoursInput";
 interface TimesheetFormProps {
   workTypes: any[];
   onTimesheetAdded: () => void;
+  editingTimesheet?: {
+    id: string;
+    work_date: string;
+    hours: number;
+    start_time: string | null;
+    end_time: string | null;
+    work_type_id: string;
+  };
 }
 
-export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProps) => {
-  const [selectedWorkType, setSelectedWorkType] = useState("");
-  const [hours, setHours] = useState("");
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }: TimesheetFormProps) => {
+  const [selectedWorkType, setSelectedWorkType] = useState(editingTimesheet?.work_type_id || "");
+  const [hours, setHours] = useState(editingTimesheet ? editingTimesheet.hours.toString() : "");
+  const [date, setDate] = useState<Date | undefined>(
+    editingTimesheet ? new Date(editingTimesheet.work_date) : new Date()
+  );
+  const [startTime, setStartTime] = useState(editingTimesheet?.start_time || "");
+  const [endTime, setEndTime] = useState(editingTimesheet?.end_time || "");
   const [isFixedRate, setIsFixedRate] = useState(false);
   const [salary, setSalary] = useState<number | null>(null);
   const { toast } = useToast();
@@ -57,11 +67,6 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
 
       const isFixed = workTypeData.rate_type === 'fixed';
       setIsFixedRate(isFixed);
-      
-      // Don't automatically set hours for fixed rate anymore
-      if (isFixed && hours === "") {
-        setHours("1");
-      }
 
       const hoursValue = parseFloat(hours) || 0;
       if (isFixed) {
@@ -107,22 +112,39 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       if (!userData.user) throw new Error("No user found");
 
       const hoursValue = parseFloat(hours);
-
-      const { error } = await supabase.from("timesheets").insert({
+      const timesheetData = {
         employee_id: userData.user.id,
         work_type_id: selectedWorkType,
         hours: hoursValue,
         work_date: format(date, "yyyy-MM-dd"),
         start_time: startTime,
         end_time: endTime,
-      });
+      };
 
-      if (error) throw error;
+      if (editingTimesheet) {
+        const { error } = await supabase
+          .from("timesheets")
+          .update(timesheetData)
+          .eq('id', editingTimesheet.id);
 
-      toast({
-        title: "Success",
-        description: `Salary logged: $${salary?.toFixed(2)}`,
-      });
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Entry updated successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from("timesheets")
+          .insert(timesheetData);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: `Salary logged: $${salary?.toFixed(2)}`,
+        });
+      }
 
       setSelectedWorkType("");
       setHours("");
@@ -142,9 +164,9 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
   };
 
   return (
-    <Card>
+    <Card className={editingTimesheet ? "border-0 shadow-none" : undefined}>
       <CardHeader>
-        <CardTitle>Log Salary</CardTitle>
+        <CardTitle>{editingTimesheet ? "Edit Entry" : "Log Salary"}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4">
@@ -183,7 +205,9 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
             </div>
           )}
           
-          <Button onClick={handleSubmit}>Log Salary</Button>
+          <Button onClick={handleSubmit}>
+            {editingTimesheet ? "Update Entry" : "Log Salary"}
+          </Button>
         </div>
       </CardContent>
     </Card>
