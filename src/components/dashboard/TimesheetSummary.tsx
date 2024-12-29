@@ -43,15 +43,15 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     fetchWorkTypeRates();
   }, []);
 
-  const calculateSalary = (hours: number, workTypeId: string): number | null => {
+  const calculateSalary = (hours: number, workTypeId: string, rateType: 'fixed' | 'hourly'): number | null => {
     const rates = workTypeRates[workTypeId];
     if (!rates) return null;
 
-    if (rates.hourly_rate) {
-      return hours * rates.hourly_rate;
+    if (rateType === 'fixed' && rates.fixed_rate) {
+      return hours * rates.fixed_rate; // Multiply by hours (jobs) for fixed rate
     }
-    if (rates.fixed_rate) {
-      return rates.fixed_rate;
+    if (rateType === 'hourly' && rates.hourly_rate) {
+      return hours * rates.hourly_rate;
     }
     return null;
   };
@@ -64,6 +64,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
         name: timesheet.work_types.name,
         totalHours: 0,
         workTypeId,
+        rateType: timesheet.work_types.rate_type,
       };
     }
     acc[workTypeId].totalHours += Number(timesheet.hours);
@@ -72,14 +73,9 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
 
   // Calculate total salary across all work types
   const totalSalary = Object.values(workTypeSummaries).reduce((sum: number, summary) => {
-    const salary = calculateSalary(summary.totalHours, summary.workTypeId);
+    const salary = calculateSalary(summary.totalHours, summary.workTypeId, summary.rateType);
     return sum + (salary || 0);
   }, 0);
-
-  const handleTimesheetUpdated = () => {
-    // Refresh work type rates
-    fetchWorkTypeRates();
-  };
 
   return (
     <Card>
@@ -106,7 +102,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
             <MonthlySubmissions 
               timesheets={timesheets} 
               workTypeRates={workTypeRates}
-              onTimesheetUpdated={handleTimesheetUpdated}
+              onTimesheetUpdated={fetchWorkTypeRates}
             />
           </div>
         </div>
