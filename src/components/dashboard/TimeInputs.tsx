@@ -14,6 +14,14 @@ export const TimeInputs = ({
   onStartTimeChange,
   onEndTimeChange,
 }: TimeInputsProps) => {
+  const handleTimeChange = (value: string, onChange: (time: string) => void) => {
+    // Round minutes to nearest 15
+    const [hours, minutes] = value.split(':').map(Number);
+    const roundedMinutes = Math.round(minutes / 15) * 15;
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
+    onChange(formattedTime);
+  };
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="grid gap-2">
@@ -21,7 +29,7 @@ export const TimeInputs = ({
         <Input
           type="time"
           value={startTime}
-          onChange={(e) => onStartTimeChange(e.target.value)}
+          onChange={(e) => handleTimeChange(e.target.value, onStartTimeChange)}
           step="900" // 15 minutes in seconds (15 * 60)
         />
       </div>
@@ -30,7 +38,7 @@ export const TimeInputs = ({
         <Input
           type="time"
           value={endTime}
-          onChange={(e) => onEndTimeChange(e.target.value)}
+          onChange={(e) => handleTimeChange(e.target.value, onEndTimeChange)}
           step="900" // 15 minutes in seconds (15 * 60)
         />
       </div>
