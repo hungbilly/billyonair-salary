@@ -1,7 +1,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StaffEditDialog } from "./StaffEditDialog";
 import { StaffWorkTypeRates } from "./StaffWorkTypeRates";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ export const StaffListRow = ({ user, onDelete, onUpdate, isSelected, onSelect }:
 
   const fetchWorkTypeRates = async () => {
     try {
+      console.log("Fetching work type rates for user:", user.id);
       const { data, error } = await supabase
         .from("work_type_assignments")
         .select(`
@@ -34,8 +35,10 @@ export const StaffListRow = ({ user, onDelete, onUpdate, isSelected, onSelect }:
         .eq('staff_id', user.id);
 
       if (error) throw error;
+      console.log("Fetched work type rates:", data);
       setWorkTypeRates(data || []);
     } catch (error: any) {
+      console.error("Error fetching work type rates:", error);
       toast({
         title: "Error",
         description: "Failed to fetch work type rates",
@@ -43,6 +46,12 @@ export const StaffListRow = ({ user, onDelete, onUpdate, isSelected, onSelect }:
       });
     }
   };
+
+  useEffect(() => {
+    if (isSelected) {
+      fetchWorkTypeRates();
+    }
+  }, [isSelected, user.id]);
 
   return (
     <>
