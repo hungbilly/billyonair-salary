@@ -14,32 +14,32 @@ interface TimesheetSummaryProps {
 export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
   const [workTypeRates, setWorkTypeRates] = useState<WorkTypeRates>({});
   
+  const fetchWorkTypeRates = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('work_type_assignments')
+      .select('work_type_id, hourly_rate, fixed_rate')
+      .eq('staff_id', user.id);
+
+    if (error) {
+      console.error('Error fetching work type rates:', error);
+      return;
+    }
+
+    const ratesMap = data.reduce((acc: WorkTypeRates, curr) => {
+      acc[curr.work_type_id] = {
+        hourly_rate: curr.hourly_rate,
+        fixed_rate: curr.fixed_rate,
+      };
+      return acc;
+    }, {});
+
+    setWorkTypeRates(ratesMap);
+  };
+
   useEffect(() => {
-    const fetchWorkTypeRates = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('work_type_assignments')
-        .select('work_type_id, hourly_rate, fixed_rate')
-        .eq('staff_id', user.id);
-
-      if (error) {
-        console.error('Error fetching work type rates:', error);
-        return;
-      }
-
-      const ratesMap = data.reduce((acc: WorkTypeRates, curr) => {
-        acc[curr.work_type_id] = {
-          hourly_rate: curr.hourly_rate,
-          fixed_rate: curr.fixed_rate,
-        };
-        return acc;
-      }, {});
-
-      setWorkTypeRates(ratesMap);
-    };
-
     fetchWorkTypeRates();
   }, []);
 
