@@ -48,11 +48,23 @@ export const TimesheetTableRow = ({
     rates,
     isFixedRate,
     rate,
-    workTypeRates
+    workTypeRates,
+    work_type_rate_type: work_types.rate_type
   });
   
-  // Simple calculation: rate * hours/jobs
-  const entryTotal = (rate || 0) * hours;
+  // Calculate total based on rate type
+  const calculateTotal = () => {
+    if (!rates) return 0;
+    
+    if (isFixedRate && rates.fixed_rate) {
+      return rates.fixed_rate * hours;
+    } else if (!isFixedRate && rates.hourly_rate) {
+      return rates.hourly_rate * hours;
+    }
+    return 0;
+  };
+
+  const entryTotal = calculateTotal();
 
   const handleDelete = async () => {
     try {
