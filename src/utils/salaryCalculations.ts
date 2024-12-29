@@ -8,14 +8,24 @@ export const calculateSalaryForTimesheet = (
   rateType: 'fixed' | 'hourly',
   rates?: WorkTypeRate
 ): number => {
-  if (!rates) return 0;
+  console.log('Calculating salary with:', { hours, rateType, rates });
   
-  if (rateType === 'fixed' && rates.fixed_rate) {
-    return hours * rates.fixed_rate;
-  } else if (rateType === 'hourly' && rates.hourly_rate) {
-    return hours * rates.hourly_rate;
+  if (!rates) {
+    console.log('No rates provided, returning 0');
+    return 0;
   }
   
+  if (rateType === 'fixed' && rates.fixed_rate) {
+    const total = hours * rates.fixed_rate;
+    console.log('Fixed rate calculation:', { hours, rate: rates.fixed_rate, total });
+    return total;
+  } else if (rateType === 'hourly' && rates.hourly_rate) {
+    const total = hours * rates.hourly_rate;
+    console.log('Hourly rate calculation:', { hours, rate: rates.hourly_rate, total });
+    return total;
+  }
+  
+  console.log('No matching rate type found, returning 0');
   return 0;
 };
 
