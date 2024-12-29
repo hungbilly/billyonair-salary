@@ -16,7 +16,8 @@ interface TimesheetTableRowProps {
     rate_type: 'fixed' | 'hourly';
   };
   work_type_id: string;
-  workTypeRates: Record<string, { hourly_rate?: number; fixed_rate?: number; }>;
+  rate: { hourly_rate?: number; fixed_rate?: number; };
+  rateType: 'fixed' | 'hourly';
   onDelete: () => void;
   onEdit: (timesheet: TimesheetTableRowProps) => void;
 }
@@ -34,48 +35,44 @@ export const TimesheetTableRow = ({
   end_time,
   work_types,
   work_type_id,
-  workTypeRates,
+  rate,
+  rateType,
   onDelete,
   onEdit,
 }: TimesheetTableRowProps) => {
   const { toast } = useToast();
-  const rates = workTypeRates[work_type_id];
   
-  // Determine if it's a fixed rate by checking if fixed_rate exists
-  const isFixedRate = rates?.fixed_rate != null;
-  
-  // Calculate rate based on whether fixed_rate exists
-  const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
+  // Use the rateType prop to determine if it's a fixed rate
+  const isFixedRate = rateType === 'fixed';
   
   console.log('Rate calculation details:', {
     work_type_id,
     work_type_name: work_types.name,
-    rate_type: work_types.rate_type,
+    rate_type: rateType,
     isFixedRate,
-    rates,
-    rate,
-    workTypeRates
+    rates: rate,
+    rate: isFixedRate ? rate?.fixed_rate : rate?.hourly_rate
   });
   
   // Calculate total based on rate type
   const calculateTotal = () => {
-    if (!rates) {
+    if (!rate) {
       console.log('No rates found for work type:', work_type_id);
       return 0;
     }
     
     if (isFixedRate) {
-      const total = (rates.fixed_rate || 0) * hours;
+      const total = (rate.fixed_rate || 0) * hours;
       console.log('Fixed rate calculation:', {
-        fixed_rate: rates.fixed_rate,
+        fixed_rate: rate.fixed_rate,
         hours,
         total
       });
       return total;
     } else {
-      const total = (rates.hourly_rate || 0) * hours;
+      const total = (rate.hourly_rate || 0) * hours;
       console.log('Hourly rate calculation:', {
-        hourly_rate: rates.hourly_rate,
+        hourly_rate: rate.hourly_rate,
         hours,
         total
       });
@@ -124,7 +121,7 @@ export const TimesheetTableRow = ({
         {hours} {isFixedRate ? 'job(s)' : 'hour(s)'}
       </TableCell>
       <TableCell className="text-right">
-        ${rate?.toFixed(2) || '0.00'}/{isFixedRate ? 'job' : 'hour'}
+        ${(isFixedRate ? rate?.fixed_rate : rate?.hourly_rate)?.toFixed(2) || '0.00'}/{isFixedRate ? 'job' : 'hour'}
       </TableCell>
       <TableCell className="text-right text-green-600">
         ${entryTotal.toFixed(2)}
@@ -142,7 +139,8 @@ export const TimesheetTableRow = ({
               end_time,
               work_types,
               work_type_id,
-              workTypeRates,
+              rate,
+              rateType,
               onDelete,
               onEdit,
             })}

@@ -41,7 +41,6 @@ export const MonthlyTable = ({
   const [workTypes, setWorkTypes] = useState<any[]>([]);
   const { toast } = useToast();
 
-  // Debug log for initial props
   console.log('MonthlyTable - Initial props:', {
     timesheets,
     workTypeRates
@@ -50,8 +49,11 @@ export const MonthlyTable = ({
   useEffect(() => {
     const fetchWorkTypes = async () => {
       try {
-        const { data: workTypesData, error } = await supabase
-          .from('work_types')
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
+
+        const { data, error } = await supabase
+          .from("work_types")
           .select(`
             id,
             name,
@@ -61,11 +63,11 @@ export const MonthlyTable = ({
               fixed_rate
             )
           `)
-          .eq('work_type_assignments.staff_id', (await supabase.auth.getUser()).data.user?.id || '');
+          .eq("work_type_assignments.staff_id", user.id);
 
         if (error) throw error;
-        console.log('MonthlyTable - Fetched work types:', workTypesData);
-        setWorkTypes(workTypesData || []);
+        console.log('MonthlyTable - Fetched work types:', data);
+        setWorkTypes(data || []);
       } catch (error: any) {
         console.error('Error fetching work types:', error);
         toast({
@@ -79,11 +81,9 @@ export const MonthlyTable = ({
     fetchWorkTypes();
   }, [toast]);
 
-  // Calculate monthly total by summing up all entry totals
   const monthTotal = timesheets.reduce((total, timesheet) => {
     const rates = workTypeRates[timesheet.work_type_id];
     
-    // Debug log for each timesheet entry
     console.log('MonthlyTable - Processing timesheet entry:', {
       id: timesheet.id,
       workTypeName: timesheet.work_types.name,
@@ -94,14 +94,12 @@ export const MonthlyTable = ({
       availableRates: rates
     });
 
-    // Determine rate based on the work type's rate_type
     const rate = timesheet.work_types.rate_type === 'fixed' 
       ? rates?.fixed_rate 
       : rates?.hourly_rate;
     
     const entryTotal = rate ? rate * timesheet.hours : 0;
     
-    // Debug log for rate calculation
     console.log('MonthlyTable - Rate calculation:', {
       rateType: timesheet.work_types.rate_type,
       isFixedRate: timesheet.work_types.rate_type === 'fixed',
@@ -131,19 +129,19 @@ export const MonthlyTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {timesheets.map((sheet) => {
-            // Debug log for each row being rendered
+          {timesheets.map((timesheet) => {
             console.log('MonthlyTable - Rendering row:', {
-              id: sheet.id,
-              workType: sheet.work_types,
-              rateType: sheet.work_types.rate_type
+              id: timesheet.id,
+              workType: timesheet.work_types,
+              rateType: timesheet.work_types.rate_type
             });
             
             return (
               <TimesheetTableRow
-                key={sheet.id}
-                {...sheet}
-                workTypeRates={workTypeRates}
+                key={timesheet.id}
+                {...timesheet}
+                rate={workTypeRates[timesheet.work_type_id]}
+                rateType={timesheet.work_types.rate_type}
                 onDelete={onTimesheetUpdated}
                 onEdit={setEditingTimesheet}
               />
