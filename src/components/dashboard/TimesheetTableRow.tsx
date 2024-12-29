@@ -42,7 +42,6 @@ export const TimesheetTableRow = ({
 }: TimesheetTableRowProps) => {
   const { toast } = useToast();
   
-  // Use the rateType prop to determine if it's a fixed rate
   const isFixedRate = rateType === 'fixed';
   
   console.log('Rate calculation details:', {
@@ -54,7 +53,6 @@ export const TimesheetTableRow = ({
     rate: isFixedRate ? rate?.fixed_rate : rate?.hourly_rate
   });
   
-  // Calculate total based on rate type
   const calculateTotal = () => {
     if (!rate) {
       console.log('No rates found for work type:', work_type_id);
