@@ -42,6 +42,15 @@ export const TimesheetTableRow = ({
 }: TimesheetTableRowProps) => {
   const { toast } = useToast();
   
+  console.log('TimesheetTableRow - Props received:', {
+    id,
+    work_type_id,
+    work_type_name: work_types.name,
+    rateType,
+    rate,
+    hours
+  });
+  
   const isFixedRate = rateType === 'fixed';
   
   console.log('Rate calculation details:', {
