@@ -164,52 +164,56 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
   };
 
   return (
-    <Card className={editingTimesheet ? "border-0 shadow-none" : undefined}>
-      <CardHeader>
-        <CardTitle>{editingTimesheet ? "Edit Entry" : "Log Salary"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
-          <WorkTypeSelect
-            workTypes={workTypes}
-            selectedWorkType={selectedWorkType}
-            onWorkTypeChange={setSelectedWorkType}
-          />
-          
-          <div className="grid gap-2">
-            <Label>Date</Label>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-            />
-          </div>
+    <div className={`w-full ${editingTimesheet ? 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-y-auto' : ''}`}>
+      <div className={`${editingTimesheet ? 'min-h-screen flex items-center justify-center p-4' : ''}`}>
+        <Card className={`w-full max-w-2xl mx-auto ${editingTimesheet ? 'relative' : ''}`}>
+          <CardHeader>
+            <CardTitle>{editingTimesheet ? "Edit Entry" : "Log Salary"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <WorkTypeSelect
+                workTypes={workTypes}
+                selectedWorkType={selectedWorkType}
+                onWorkTypeChange={setSelectedWorkType}
+              />
+              
+              <div className="grid gap-2">
+                <Label>Date</Label>
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="rounded-md border mx-auto"
+                />
+              </div>
 
-          <TimeInputs
-            startTime={startTime}
-            endTime={endTime}
-            onStartTimeChange={setStartTime}
-            onEndTimeChange={setEndTime}
-          />
-          
-          <JobsHoursInput
-            isFixedRate={isFixedRate}
-            value={hours}
-            onChange={setHours}
-          />
+              <TimeInputs
+                startTime={startTime}
+                endTime={endTime}
+                onStartTimeChange={setStartTime}
+                onEndTimeChange={setEndTime}
+              />
+              
+              <JobsHoursInput
+                isFixedRate={isFixedRate}
+                value={hours}
+                onChange={setHours}
+              />
 
-          {salary !== null && (
-            <div className="text-lg font-semibold text-green-600">
-              Estimated Salary: ${salary.toFixed(2)}
+              {salary !== null && (
+                <div className="text-lg font-semibold text-green-600">
+                  Estimated Salary: ${salary.toFixed(2)}
+                </div>
+              )}
+              
+              <Button onClick={handleSubmit}>
+                {editingTimesheet ? "Update Entry" : "Log Salary"}
+              </Button>
             </div>
-          )}
-          
-          <Button onClick={handleSubmit}>
-            {editingTimesheet ? "Update Entry" : "Log Salary"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
