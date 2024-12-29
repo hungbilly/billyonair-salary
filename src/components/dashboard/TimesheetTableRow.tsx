@@ -41,27 +41,44 @@ export const TimesheetTableRow = ({
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
   const isFixedRate = work_types.rate_type === 'fixed';
+  
+  // Calculate rate based on rate type
   const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
   
-  console.log('Rate calculation:', {
+  console.log('Rate calculation details:', {
     work_type_id,
-    rates,
+    work_type_name: work_types.name,
+    rate_type: work_types.rate_type,
     isFixedRate,
+    rates,
     rate,
-    workTypeRates,
-    work_type_rate_type: work_types.rate_type
+    workTypeRates
   });
   
   // Calculate total based on rate type
   const calculateTotal = () => {
-    if (!rates) return 0;
-    
-    if (isFixedRate && rates.fixed_rate) {
-      return rates.fixed_rate * hours;
-    } else if (!isFixedRate && rates.hourly_rate) {
-      return rates.hourly_rate * hours;
+    if (!rates) {
+      console.log('No rates found for work type:', work_type_id);
+      return 0;
     }
-    return 0;
+    
+    if (isFixedRate) {
+      const total = (rates.fixed_rate || 0) * hours;
+      console.log('Fixed rate calculation:', {
+        fixed_rate: rates.fixed_rate,
+        hours,
+        total
+      });
+      return total;
+    } else {
+      const total = (rates.hourly_rate || 0) * hours;
+      console.log('Hourly rate calculation:', {
+        hourly_rate: rates.hourly_rate,
+        hours,
+        total
+      });
+      return total;
+    }
   };
 
   const entryTotal = calculateTotal();
