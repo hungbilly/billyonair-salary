@@ -3,18 +3,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { TimesheetForm } from "./TimesheetForm";
 import { TimesheetSummary } from "./TimesheetSummary";
+import { useQuery } from "@tanstack/react-query";
 
 export const StaffDashboard = () => {
   const [workTypes, setWorkTypes] = useState<any[]>([]);
-  const [timesheets, setTimesheets] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
+
+  // Convert fetchTimesheets to a query function
+  const fetchTimesheets = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase
+      .from("timesheets")
+      .select(`
+        *,
+        work_types (
+          name,
+          rate_type
+        )
+      `)
+      .eq("employee_id", user.id)
+      .order("work_date", { ascending: false });
+
+    if (error) throw error;
+    console.log("Fetched Timesheets with rate_type:", data);
+    return data || [];
+  };
+
+  // Use React Query for timesheets
+  const { data: timesheets = [] } = useQuery({
+    queryKey: ["timesheets"],
+    queryFn: fetchTimesheets
+  });
 
   useEffect(() => {
     const initializeDashboard = async () => {
       await Promise.all([
         fetchWorkTypes(),
-        fetchTimesheets(),
         fetchCurrentUser()
       ]);
     };
@@ -72,40 +99,6 @@ export const StaffDashboard = () => {
     }
   };
 
-  const fetchTimesheets = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("timesheets")
-        .select(`
-          *,
-          work_types (
-            name,
-            rate_type
-          )
-        `)
-        .eq("employee_id", user.id)
-        .order("work_date", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching timesheets:", error);
-        throw error;
-      }
-
-      console.log("Fetched Timesheets with rate_type:", data);
-      setTimesheets(data || []);
-    } catch (error: any) {
-      console.error("Error fetching timesheets:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch timesheets",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
@@ -119,7 +112,7 @@ export const StaffDashboard = () => {
         </div>
       </div>
       
-      <TimesheetForm workTypes={workTypes} onTimesheetAdded={fetchTimesheets} />
+      <TimesheetForm workTypes={workTypes} onTimesheetAdded={() => {}} />
       <TimesheetSummary timesheets={timesheets} />
     </div>
   );
