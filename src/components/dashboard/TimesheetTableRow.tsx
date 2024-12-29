@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateSalary } from "@/utils/salary";
+import { calculateSalaryForTimesheet } from "@/utils/salaryCalculations";
 
 interface TimesheetTableRowProps {
   id: string;
@@ -41,8 +41,8 @@ export const TimesheetTableRow = ({
 }: TimesheetTableRowProps) => {
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
-  
-  const salary = calculateSalary(hours, work_types.rate_type, rates);
+  const rate = work_types.rate_type === 'fixed' ? rates?.fixed_rate : rates?.hourly_rate;
+  const entryTotal = calculateSalaryForTimesheet(hours, work_types.rate_type, rates);
 
   const handleDelete = async () => {
     try {
@@ -82,8 +82,11 @@ export const TimesheetTableRow = ({
       <TableCell className="text-right">
         {hours} {work_types.rate_type === 'fixed' ? 'job(s)' : 'hour(s)'}
       </TableCell>
+      <TableCell className="text-right">
+        ${rate?.toFixed(2) || '0.00'}/{work_types.rate_type === 'fixed' ? 'job' : 'hour'}
+      </TableCell>
       <TableCell className="text-right text-green-600">
-        ${salary.toFixed(2)}
+        ${entryTotal.toFixed(2)}
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">

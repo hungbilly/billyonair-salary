@@ -11,6 +11,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { TimesheetForm } from "./TimesheetForm";
 import { calculateTotalSalary } from "@/utils/salaryCalculations";
+import { format } from "date-fns";
 
 interface Timesheet {
   id: string;
@@ -38,6 +39,8 @@ export const MonthlyTable = ({
 }: MonthlyTableProps) => {
   const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
 
+  const monthTotal = calculateTotalSalary(timesheets, workTypeRates);
+
   return (
     <>
       <Table>
@@ -47,7 +50,8 @@ export const MonthlyTable = ({
             <TableHead>Time</TableHead>
             <TableHead>Work Type</TableHead>
             <TableHead className="text-right">Hours/Jobs</TableHead>
-            <TableHead className="text-right">Salary</TableHead>
+            <TableHead className="text-right">Rate</TableHead>
+            <TableHead className="text-right">Entry Total</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -62,11 +66,11 @@ export const MonthlyTable = ({
             />
           ))}
           <TableRow className="font-bold">
-            <TableCell colSpan={4} className="text-right">
+            <TableCell colSpan={5} className="text-right">
               Monthly Total:
             </TableCell>
             <TableCell className="text-right text-green-600">
-              ${calculateTotalSalary(timesheets, workTypeRates).toFixed(2)}
+              ${monthTotal.toFixed(2)}
             </TableCell>
             <TableCell />
           </TableRow>

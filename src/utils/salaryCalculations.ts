@@ -9,10 +9,10 @@ export const calculateSalaryForTimesheet = (
   rates?: WorkTypeRate
 ): number => {
   if (!rates) return 0;
-
+  
   if (rateType === 'fixed' && rates.fixed_rate) {
     return hours * rates.fixed_rate;
-  } else if (rates.hourly_rate) {
+  } else if (rateType === 'hourly' && rates.hourly_rate) {
     return hours * rates.hourly_rate;
   }
   
@@ -31,11 +31,10 @@ export const calculateTotalSalary = (
 ): number => {
   return timesheets.reduce((total, timesheet) => {
     const rates = workTypeRates[timesheet.work_type_id];
-    const salary = calculateSalaryForTimesheet(
+    return total + calculateSalaryForTimesheet(
       timesheet.hours,
       timesheet.work_types.rate_type,
       rates
     );
-    return total + salary;
   }, 0);
 };
