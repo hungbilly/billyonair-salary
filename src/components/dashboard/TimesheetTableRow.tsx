@@ -43,6 +43,14 @@ export const TimesheetTableRow = ({
   const isFixedRate = work_types.rate_type === 'fixed';
   const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
   
+  console.log('Rate calculation:', {
+    work_type_id,
+    rates,
+    isFixedRate,
+    rate,
+    workTypeRates
+  });
+  
   // Simple calculation: rate * hours/jobs
   const entryTotal = (rate || 0) * hours;
 
