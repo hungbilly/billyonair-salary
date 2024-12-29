@@ -83,11 +83,8 @@ export const MonthlyTable = ({
         </TableBody>
       </Table>
 
-      <Dialog 
-        open={!!editingTimesheet} 
-        onOpenChange={() => setEditingTimesheet(null)}
-      >
-        <DialogContent className="sm:max-w-[800px] w-[95vw]">
+      <Dialog open={!!editingTimesheet} onOpenChange={() => setEditingTimesheet(null)}>
+        <DialogContent className="max-w-2xl">
           {editingTimesheet && (
             <TimesheetForm
               workTypes={[]}
