@@ -41,7 +41,7 @@ export const MonthlySubmissions = ({
     return acc;
   }, {});
 
-  // Calculate monthly total
+  // Calculate monthly total by simply summing up entry totals
   const calculateMonthTotal = (sheets: Timesheet[]) => {
     return sheets.reduce((total, timesheet) => {
       const rates = workTypeRates[timesheet.work_type_id];
@@ -49,20 +49,9 @@ export const MonthlySubmissions = ({
         ? rates?.fixed_rate 
         : rates?.hourly_rate;
       
-      if (rate === undefined) {
-        console.log('No rate found for work type:', timesheet.work_type_id);
-        return total;
-      }
+      if (!rate) return total;
       
-      const entryTotal = rate * timesheet.hours;
-      console.log('Calculating entry total:', {
-        rate_type: timesheet.work_types.rate_type,
-        rate,
-        hours: timesheet.hours,
-        entryTotal
-      });
-      
-      return total + entryTotal;
+      return total + (rate * timesheet.hours);
     }, 0);
   };
 

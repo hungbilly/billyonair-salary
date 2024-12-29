@@ -72,27 +72,16 @@ export const MonthlyTable = ({
     fetchWorkTypes();
   }, [toast]);
 
-  // Calculate monthly total by summing up all entry totals
+  // Calculate monthly total by summing up all entry totals directly
   const monthTotal = timesheets.reduce((total, timesheet) => {
     const rates = workTypeRates[timesheet.work_type_id];
     const rate = timesheet.work_types.rate_type === 'fixed' 
       ? rates?.fixed_rate 
       : rates?.hourly_rate;
     
-    if (rate === undefined) {
-      console.log('No rate found for work type:', timesheet.work_type_id);
-      return total;
-    }
+    if (!rate) return total;
     
-    const entryTotal = rate * timesheet.hours;
-    console.log('Calculating monthly total entry:', {
-      rate_type: timesheet.work_types.rate_type,
-      rate,
-      hours: timesheet.hours,
-      entryTotal
-    });
-    
-    return total + entryTotal;
+    return total + (rate * timesheet.hours);
   }, 0);
 
   return (
