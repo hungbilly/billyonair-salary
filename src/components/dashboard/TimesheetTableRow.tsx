@@ -42,7 +42,11 @@ export const TimesheetTableRow = ({
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
   const rate = work_types.rate_type === 'fixed' ? rates?.fixed_rate : rates?.hourly_rate;
-  const entryTotal = calculateSalaryForTimesheet(hours, work_types.rate_type, rates);
+  const entryTotal = calculateSalaryForTimesheet(
+    hours, 
+    work_types.rate_type, // Pass the actual rate_type from work_types
+    rates
+  );
 
   const handleDelete = async () => {
     try {
