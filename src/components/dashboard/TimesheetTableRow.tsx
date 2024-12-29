@@ -42,7 +42,7 @@ export const TimesheetTableRow = ({
   const rates = workTypeRates[work_type_id];
   const isFixedRate = work_types.rate_type === 'fixed';
   
-  // Calculate rate based on rate type
+  // Calculate rate based on rate type from work_types
   const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
   
   console.log('Rate calculation details:', {
