@@ -83,6 +83,7 @@ export const MonthlyTable = ({
       availableRates: rates
     });
 
+    // Determine rate based on the work type's rate_type
     const rate = timesheet.work_types.rate_type === 'fixed' 
       ? rates?.fixed_rate 
       : rates?.hourly_rate;
