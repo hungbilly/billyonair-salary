@@ -30,12 +30,15 @@ interface MonthlyTableProps {
 export const MonthlyTable = ({ timesheets, workTypeRates }: MonthlyTableProps) => {
   const calculateMonthlyTotal = (sheets: Timesheet[]): number => {
     return sheets.reduce((total, sheet) => {
-      const salary = calculateSalary(
-        sheet.hours,
-        sheet.work_types.rate_type,
-        workTypeRates[sheet.work_type_id]
-      );
-      return total + salary;
+      const rates = workTypeRates[sheet.work_type_id];
+      if (!rates) return total;
+
+      if (sheet.work_types.rate_type === 'fixed' && rates.fixed_rate) {
+        return total + (rates.fixed_rate * sheet.hours); // Multiply by hours (which represents job count for fixed rate)
+      } else if (sheet.work_types.rate_type === 'hourly' && rates.hourly_rate) {
+        return total + (rates.hourly_rate * sheet.hours);
+      }
+      return total;
     }, 0);
   };
 

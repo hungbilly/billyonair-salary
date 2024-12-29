@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { calculateSalary } from "@/utils/salary";
 
 interface TimesheetTableRowProps {
   id: string;
@@ -32,11 +31,18 @@ export const TimesheetTableRow = ({
 }: TimesheetTableRowProps) => {
   const rates = workTypeRates[work_type_id];
   
-  const salary = calculateSalary(
-    hours,
-    work_types.rate_type,
-    rates
-  );
+  const calculateSalary = (): number => {
+    if (!rates) return 0;
+    
+    if (work_types.rate_type === 'fixed' && rates.fixed_rate) {
+      return rates.fixed_rate * hours; // Multiply by hours (which represents job count for fixed rate)
+    } else if (work_types.rate_type === 'hourly' && rates.hourly_rate) {
+      return rates.hourly_rate * hours;
+    }
+    return 0;
+  };
+
+  const salary = calculateSalary();
 
   return (
     <TableRow>
