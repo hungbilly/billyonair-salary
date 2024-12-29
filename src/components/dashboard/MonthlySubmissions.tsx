@@ -6,7 +6,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { MonthlyTable } from "./MonthlyTable";
-import { calculateTotalSalary } from "@/utils/salaryCalculations";
 
 interface Timesheet {
   id: string;
@@ -42,6 +41,18 @@ export const MonthlySubmissions = ({
     return acc;
   }, {});
 
+  // Calculate monthly total using the same logic as MonthlyTable
+  const calculateMonthTotal = (sheets: Timesheet[]) => {
+    return sheets.reduce((total, timesheet) => {
+      const rates = workTypeRates[timesheet.work_type_id];
+      const rate = timesheet.work_types.rate_type === 'fixed' 
+        ? rates?.fixed_rate 
+        : rates?.hourly_rate;
+      const entryTotal = (rate || 0) * timesheet.hours;
+      return total + entryTotal;
+    }, 0);
+  };
+
   return (
     <Accordion type="single" collapsible className="w-full">
       {Object.entries(monthlyTimesheets).map(([month, sheets]) => (
@@ -50,7 +61,7 @@ export const MonthlySubmissions = ({
             <div className="flex justify-between w-full pr-4">
               <span>{month}</span>
               <span className="text-green-600">
-                ${calculateTotalSalary(sheets, workTypeRates).toFixed(2)}
+                ${calculateMonthTotal(sheets).toFixed(2)}
               </span>
             </div>
           </AccordionTrigger>
