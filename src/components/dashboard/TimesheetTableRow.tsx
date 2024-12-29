@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TimesheetTableRowProps {
   id: string;
@@ -51,6 +52,7 @@ export const TimesheetTableRow = ({
 }: TimesheetTableRowProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   console.log('TimesheetTableRow - Props received:', {
     id,
@@ -74,6 +76,9 @@ export const TimesheetTableRow = ({
         title: "Success",
         description: "Timesheet entry deleted",
       });
+      
+      // Invalidate and refetch queries
+      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
       onDelete();
     } catch (error: any) {
       console.error('Error deleting timesheet:', error);
@@ -157,15 +162,19 @@ export const TimesheetTableRow = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onEdit({
-                id,
-                work_date,
-                hours,
-                start_time,
-                end_time,
-                work_types,
-                work_type_id
-              })}
+              onClick={() => {
+                onEdit({
+                  id,
+                  work_date,
+                  hours,
+                  start_time,
+                  end_time,
+                  work_types,
+                  work_type_id
+                });
+                // Invalidate queries after edit
+                queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+              }}
             >
               <Edit className="h-4 w-4" />
             </Button>
