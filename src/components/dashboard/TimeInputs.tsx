@@ -18,7 +18,7 @@ export const TimeInputs = ({
     // Round minutes to nearest 15
     const [hours, minutes] = value.split(':').map(Number);
     const roundedMinutes = Math.round(minutes / 15) * 15;
-    const formattedTime = `${hours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${roundedMinutes === 60 ? '00' : roundedMinutes.toString().padStart(2, '0')}`;
     onChange(formattedTime);
   };
 
@@ -31,6 +31,7 @@ export const TimeInputs = ({
           value={startTime}
           onChange={(e) => handleTimeChange(e.target.value, onStartTimeChange)}
           step="900" // 15 minutes in seconds (15 * 60)
+          list="time-list"
         />
       </div>
       <div className="grid gap-2">
@@ -40,8 +41,18 @@ export const TimeInputs = ({
           value={endTime}
           onChange={(e) => handleTimeChange(e.target.value, onEndTimeChange)}
           step="900" // 15 minutes in seconds (15 * 60)
+          list="time-list"
         />
       </div>
+      <datalist id="time-list">
+        {Array.from({ length: 96 }, (_, i) => {
+          const hour = Math.floor(i / 4);
+          const minute = (i % 4) * 15;
+          return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        }).map((time) => (
+          <option key={time} value={time} />
+        ))}
+      </datalist>
     </div>
   );
 };
