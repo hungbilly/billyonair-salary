@@ -18,10 +18,12 @@ export const WorkTypeSummaryItem = ({
   
   const calculateSalary = (): number | null => {
     if (!rates) return null;
-    if (rates.hourly_rate) return totalHours * rates.hourly_rate;
-    if (rates.fixed_rate) {
-      // For fixed rate, multiply the rate by the number of entries (totalHours represents the count for fixed rate)
+    
+    if (isFixedRate && rates.fixed_rate) {
+      // For fixed rate, multiply the rate by the number of jobs (totalHours represents the count)
       return rates.fixed_rate * totalHours;
+    } else if (rates.hourly_rate) {
+      return totalHours * rates.hourly_rate;
     }
     return null;
   };
