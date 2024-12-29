@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { TimesheetForm } from "./TimesheetForm";
 import { TimesheetSummary } from "./TimesheetSummary";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const StaffDashboard = () => {
   const [workTypes, setWorkTypes] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Convert fetchTimesheets to a query function
   const fetchTimesheets = async () => {
@@ -37,6 +38,11 @@ export const StaffDashboard = () => {
     queryKey: ["timesheets"],
     queryFn: fetchTimesheets
   });
+
+  const handleTimesheetUpdated = () => {
+    console.log("Invalidating timesheets query...");
+    queryClient.invalidateQueries({ queryKey: ["timesheets"] });
+  };
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -112,8 +118,14 @@ export const StaffDashboard = () => {
         </div>
       </div>
       
-      <TimesheetForm workTypes={workTypes} onTimesheetAdded={() => {}} />
-      <TimesheetSummary timesheets={timesheets} />
+      <TimesheetForm 
+        workTypes={workTypes} 
+        onTimesheetAdded={handleTimesheetUpdated} 
+      />
+      <TimesheetSummary 
+        timesheets={timesheets} 
+        onTimesheetUpdated={handleTimesheetUpdated}
+      />
     </div>
   );
 };

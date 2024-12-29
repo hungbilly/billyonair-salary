@@ -10,9 +10,10 @@ import { calculateTotalSalary } from "@/utils/salaryCalculations";
 
 interface TimesheetSummaryProps {
   timesheets: any[];
+  onTimesheetUpdated: () => void;
 }
 
-export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
+export const TimesheetSummary = ({ timesheets, onTimesheetUpdated }: TimesheetSummaryProps) => {
   const [workTypeRates, setWorkTypeRates] = useState<WorkTypeRates>({});
   
   const fetchWorkTypeRates = async () => {
@@ -87,7 +88,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
             <MonthlySubmissions 
               timesheets={timesheets} 
               workTypeRates={workTypeRates}
-              onTimesheetUpdated={fetchWorkTypeRates}
+              onTimesheetUpdated={onTimesheetUpdated}
             />
           </div>
         </div>
