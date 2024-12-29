@@ -46,8 +46,10 @@ export type Database = {
         Row: {
           created_at: string
           employee_id: string
+          end_time: string | null
           hours: number
           id: string
+          start_time: string | null
           updated_at: string
           work_date: string
           work_type_id: string
@@ -55,8 +57,10 @@ export type Database = {
         Insert: {
           created_at?: string
           employee_id: string
+          end_time?: string | null
           hours: number
           id?: string
+          start_time?: string | null
           updated_at?: string
           work_date: string
           work_type_id: string
@@ -64,8 +68,10 @@ export type Database = {
         Update: {
           created_at?: string
           employee_id?: string
+          end_time?: string | null
           hours?: number
           id?: string
+          start_time?: string | null
           updated_at?: string
           work_date?: string
           work_type_id?: string

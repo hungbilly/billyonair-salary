@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { WorkTypeSelect } from "./WorkTypeSelect";
+import { TimeInputs } from "./TimeInputs";
 
 interface TimesheetFormProps {
   workTypes: any[];
@@ -18,6 +19,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
   const [selectedWorkType, setSelectedWorkType] = useState("");
   const [hours, setHours] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [isFixedRate, setIsFixedRate] = useState(false);
   const [salary, setSalary] = useState<number | null>(null);
   const { toast } = useToast();
@@ -58,7 +61,6 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
         setHours("1");
         setSalary(rateData.fixed_rate || 0);
       } else {
-        // Only set hours if it's empty or switching from fixed rate
         if (hours === "1" && isFixedRate) {
           setHours("");
         }
@@ -68,9 +70,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
     };
 
     fetchWorkTypeRateType();
-  }, [selectedWorkType]); // Only depend on selectedWorkType
+  }, [selectedWorkType]);
 
-  // Separate effect for salary calculation when hours change
   useEffect(() => {
     if (!isFixedRate && selectedWorkType) {
       const calculateSalary = async () => {
@@ -94,7 +95,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
   }, [hours, selectedWorkType, isFixedRate]);
 
   const validateInput = () => {
-    if (!date || !selectedWorkType) {
+    if (!date || !selectedWorkType || !startTime || !endTime) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -132,6 +133,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
         work_type_id: selectedWorkType,
         hours: hoursValue,
         work_date: format(date, "yyyy-MM-dd"),
+        start_time: startTime,
+        end_time: endTime,
       });
 
       if (error) throw error;
@@ -144,6 +147,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       setSelectedWorkType("");
       setHours(isFixedRate ? "1" : "");
       setDate(new Date());
+      setStartTime("");
+      setEndTime("");
       setSalary(null);
       onTimesheetAdded();
     } catch (error: any) {
@@ -163,21 +168,11 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
       </CardHeader>
       <CardContent>
         <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>Work Type</Label>
-            <Select value={selectedWorkType} onValueChange={setSelectedWorkType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select work type" />
-              </SelectTrigger>
-              <SelectContent>
-                {workTypes.map((workType) => (
-                  <SelectItem key={workType.id} value={workType.id}>
-                    {workType.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <WorkTypeSelect
+            workTypes={workTypes}
+            selectedWorkType={selectedWorkType}
+            onWorkTypeChange={setSelectedWorkType}
+          />
           
           <div className="grid gap-2">
             <Label>Date</Label>
@@ -188,6 +183,13 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded }: TimesheetFormProp
               className="rounded-md border"
             />
           </div>
+
+          <TimeInputs
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+          />
           
           {!isFixedRate && (
             <div className="grid gap-2">
