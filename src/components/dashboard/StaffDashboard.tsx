@@ -82,7 +82,8 @@ export const StaffDashboard = () => {
         .select(`
           *,
           work_types (
-            name
+            name,
+            rate_type
           )
         `)
         .eq("employee_id", user.id)
@@ -93,6 +94,7 @@ export const StaffDashboard = () => {
         throw error;
       }
 
+      console.log("Fetched Timesheets with rate_type:", data);
       setTimesheets(data || []);
     } catch (error: any) {
       console.error("Error fetching timesheets:", error);
