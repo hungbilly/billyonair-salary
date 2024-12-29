@@ -8,8 +8,10 @@ import {
 } from "@/components/ui/table";
 import { TimesheetTableRow } from "./TimesheetTableRow";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TimesheetForm } from "./TimesheetForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Timesheet {
   id: string;
@@ -36,6 +38,39 @@ export const MonthlyTable = ({
   onTimesheetUpdated 
 }: MonthlyTableProps) => {
   const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
+  const [workTypes, setWorkTypes] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchWorkTypes = async () => {
+      try {
+        const { data: workTypesData, error } = await supabase
+          .from('work_types')
+          .select(`
+            id,
+            name,
+            rate_type,
+            work_type_assignments!inner (
+              hourly_rate,
+              fixed_rate
+            )
+          `)
+          .eq('work_type_assignments.staff_id', (await supabase.auth.getUser()).data.user?.id || '');
+
+        if (error) throw error;
+        setWorkTypes(workTypesData || []);
+      } catch (error: any) {
+        console.error('Error fetching work types:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load work types",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchWorkTypes();
+  }, [toast]);
 
   // Calculate monthly total by summing up all entry totals
   const monthTotal = timesheets.reduce((total, timesheet) => {
@@ -87,7 +122,7 @@ export const MonthlyTable = ({
         <DialogContent className="max-w-2xl">
           {editingTimesheet && (
             <TimesheetForm
-              workTypes={[]}
+              workTypes={workTypes}
               onTimesheetAdded={() => {
                 onTimesheetUpdated();
                 setEditingTimesheet(null);
