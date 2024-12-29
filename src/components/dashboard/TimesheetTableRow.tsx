@@ -41,10 +41,10 @@ export const TimesheetTableRow = ({
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
   
-  // Determine if it's a fixed rate by checking work_types.rate_type
-  const isFixedRate = work_types.rate_type === 'fixed';
+  // Determine if it's a fixed rate by checking if fixed_rate exists
+  const isFixedRate = rates?.fixed_rate != null;
   
-  // Calculate rate based on rate type
+  // Calculate rate based on whether fixed_rate exists
   const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
   
   console.log('Rate calculation details:', {
@@ -53,8 +53,37 @@ export const TimesheetTableRow = ({
     rate_type: work_types.rate_type,
     isFixedRate,
     rates,
-    rate
+    rate,
+    workTypeRates
   });
+  
+  // Calculate total based on rate type
+  const calculateTotal = () => {
+    if (!rates) {
+      console.log('No rates found for work type:', work_type_id);
+      return 0;
+    }
+    
+    if (isFixedRate) {
+      const total = (rates.fixed_rate || 0) * hours;
+      console.log('Fixed rate calculation:', {
+        fixed_rate: rates.fixed_rate,
+        hours,
+        total
+      });
+      return total;
+    } else {
+      const total = (rates.hourly_rate || 0) * hours;
+      console.log('Hourly rate calculation:', {
+        hourly_rate: rates.hourly_rate,
+        hours,
+        total
+      });
+      return total;
+    }
+  };
+
+  const entryTotal = calculateTotal();
 
   const handleDelete = async () => {
     try {
@@ -96,6 +125,9 @@ export const TimesheetTableRow = ({
       </TableCell>
       <TableCell className="text-right">
         ${rate?.toFixed(2) || '0.00'}/{isFixedRate ? 'job' : 'hour'}
+      </TableCell>
+      <TableCell className="text-right text-green-600">
+        ${entryTotal.toFixed(2)}
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">
