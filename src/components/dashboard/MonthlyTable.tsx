@@ -30,11 +30,12 @@ interface MonthlyTableProps {
 export const MonthlyTable = ({ timesheets, workTypeRates }: MonthlyTableProps) => {
   const calculateMonthlyTotal = (sheets: Timesheet[]): number => {
     return sheets.reduce((total, sheet) => {
-      return total + calculateSalary(
+      const salary = calculateSalary(
         sheet.hours,
         sheet.work_types.rate_type,
         workTypeRates[sheet.work_type_id]
       );
+      return total + salary;
     }, 0);
   };
 
