@@ -111,7 +111,12 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
       if (checkError) throw checkError;
 
       if (existingAssignment) {
-        throw new Error("This staff member is already assigned to this work type");
+        toast({
+          title: "Error",
+          description: "This staff member is already assigned to this work type",
+          variant: "destructive",
+        });
+        return;
       }
 
       const { error: insertError } = await supabase
@@ -122,7 +127,18 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
           [workType.rate_type === "hourly" ? "hourly_rate" : "fixed_rate"]: rateValue,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Check if it's a duplicate error
+        if (insertError.code === '23505') {
+          toast({
+            title: "Error",
+            description: "This staff member is already assigned to this work type",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw insertError;
+      }
 
       toast({
         title: "Success",
