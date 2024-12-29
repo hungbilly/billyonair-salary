@@ -11,7 +11,7 @@ export const calculateSalary = (
   if (!rates) return 0;
 
   if (rateType === 'fixed' && rates.fixed_rate) {
-    return rates.fixed_rate * hours;
+    return hours * rates.fixed_rate;
   }
   if (rateType === 'hourly' && rates.hourly_rate) {
     return hours * rates.hourly_rate;

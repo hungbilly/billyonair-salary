@@ -30,10 +30,11 @@ export const TimesheetTableRow = ({
   work_type_id,
   workTypeRates,
 }: TimesheetTableRowProps) => {
+  const rates = workTypeRates[work_type_id];
   const salary = calculateSalary(
     hours,
     work_types.rate_type,
-    workTypeRates[work_type_id]
+    rates
   );
 
   return (
