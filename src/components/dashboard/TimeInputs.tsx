@@ -1,5 +1,11 @@
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TimeInputsProps {
   startTime: string;
@@ -14,45 +20,107 @@ export const TimeInputs = ({
   onStartTimeChange,
   onEndTimeChange,
 }: TimeInputsProps) => {
-  const handleTimeChange = (value: string, onChange: (time: string) => void) => {
-    // Round minutes to nearest 15
-    const [hours, minutes] = value.split(':').map(Number);
-    const roundedMinutes = Math.round(minutes / 15) * 15;
-    const formattedTime = `${hours.toString().padStart(2, '0')}:${roundedMinutes === 60 ? '00' : roundedMinutes.toString().padStart(2, '0')}`;
-    onChange(formattedTime);
+  const hours = Array.from({ length: 24 }, (_, i) => {
+    const hour = i;
+    const period = hour < 12 ? 'AM' : 'PM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return {
+      value: hour.toString().padStart(2, '0'),
+      label: `${displayHour}${period}`,
+    };
+  });
+
+  const minutes = ['00', '15', '30', '45'].map(min => ({
+    value: min,
+    label: min,
+  }));
+
+  const handleTimeChange = (
+    type: 'hour' | 'minute',
+    value: string,
+    currentTime: string,
+    onChange: (time: string) => void
+  ) => {
+    const [currentHour, currentMinute] = currentTime ? currentTime.split(':') : ['00', '00'];
+    const newTime = type === 'hour'
+      ? `${value}:${currentMinute}`
+      : `${currentHour}:${value}`;
+    onChange(newTime);
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div className="grid gap-2">
+    <div className="grid gap-4">
+      <div className="space-y-2">
         <Label>Start Time</Label>
-        <Input
-          type="time"
-          value={startTime}
-          onChange={(e) => handleTimeChange(e.target.value, onStartTimeChange)}
-          step="900" // 15 minutes in seconds (15 * 60)
-          list="time-list"
-        />
+        <div className="flex gap-2">
+          <Select
+            value={startTime ? startTime.split(':')[0] : undefined}
+            onValueChange={(value) => handleTimeChange('hour', value, startTime, onStartTimeChange)}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Hour" />
+            </SelectTrigger>
+            <SelectContent>
+              {hours.map((hour) => (
+                <SelectItem key={hour.value} value={hour.value}>
+                  {hour.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={startTime ? startTime.split(':')[1] : undefined}
+            onValueChange={(value) => handleTimeChange('minute', value, startTime, onStartTimeChange)}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Min" />
+            </SelectTrigger>
+            <SelectContent>
+              {minutes.map((minute) => (
+                <SelectItem key={minute.value} value={minute.value}>
+                  {minute.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className="grid gap-2">
+
+      <div className="space-y-2">
         <Label>End Time</Label>
-        <Input
-          type="time"
-          value={endTime}
-          onChange={(e) => handleTimeChange(e.target.value, onEndTimeChange)}
-          step="900" // 15 minutes in seconds (15 * 60)
-          list="time-list"
-        />
+        <div className="flex gap-2">
+          <Select
+            value={endTime ? endTime.split(':')[0] : undefined}
+            onValueChange={(value) => handleTimeChange('hour', value, endTime, onEndTimeChange)}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Hour" />
+            </SelectTrigger>
+            <SelectContent>
+              {hours.map((hour) => (
+                <SelectItem key={hour.value} value={hour.value}>
+                  {hour.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={endTime ? endTime.split(':')[1] : undefined}
+            onValueChange={(value) => handleTimeChange('minute', value, endTime, onEndTimeChange)}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Min" />
+            </SelectTrigger>
+            <SelectContent>
+              {minutes.map((minute) => (
+                <SelectItem key={minute.value} value={minute.value}>
+                  {minute.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <datalist id="time-list">
-        {Array.from({ length: 96 }, (_, i) => {
-          const hour = Math.floor(i / 4);
-          const minute = (i % 4) * 15;
-          return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        }).map((time) => (
-          <option key={time} value={time} />
-        ))}
-      </datalist>
     </div>
   );
 };
