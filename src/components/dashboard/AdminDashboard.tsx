@@ -9,7 +9,6 @@ import { CreateUserDialog } from "./CreateUserDialog";
 import { UserManagement } from "./UserManagement";
 import { WorkTypesList } from "./WorkTypesList";
 import { StaffList } from "./StaffList";
-import { StaffRatesTable } from "./StaffRatesTable";
 
 export const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -89,8 +88,6 @@ export const AdminDashboard = () => {
         <StaffList users={users} />
         <WorkTypesList />
       </div>
-
-      <StaffRatesTable />
 
       <UserManagement users={users} onUserUpdated={fetchUsers} />
     </div>
