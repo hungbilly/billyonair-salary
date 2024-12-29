@@ -12,7 +12,6 @@ import { useState, useEffect } from "react";
 import { TimesheetForm } from "./TimesheetForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useSalaryCalculations } from "@/hooks/useSalaryCalculations";
 
 interface Timesheet {
   id: string;
@@ -41,7 +40,6 @@ export const MonthlyTable = ({
   const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
   const [workTypes, setWorkTypes] = useState<any[]>([]);
   const { toast } = useToast();
-  const { total: monthTotal } = useSalaryCalculations(timesheets, workTypeRates);
 
   useEffect(() => {
     const fetchWorkTypes = async () => {
@@ -73,6 +71,17 @@ export const MonthlyTable = ({
 
     fetchWorkTypes();
   }, [toast]);
+
+  // Calculate monthly total by summing up all entry totals
+  const monthTotal = timesheets.reduce((total, timesheet) => {
+    const rates = workTypeRates[timesheet.work_type_id];
+    const rate = timesheet.work_types.rate_type === 'fixed' 
+      ? rates?.fixed_rate 
+      : rates?.hourly_rate;
+    
+    const entryTotal = rate ? rate * timesheet.hours : 0;
+    return total + entryTotal;
+  }, 0);
 
   return (
     <>
