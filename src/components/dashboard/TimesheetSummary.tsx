@@ -43,19 +43,6 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     fetchWorkTypeRates();
   }, []);
 
-  const calculateSalary = (hours: number, workTypeId: string, rateType: 'fixed' | 'hourly'): number | null => {
-    const rates = workTypeRates[workTypeId];
-    if (!rates) return null;
-
-    if (rateType === 'fixed' && rates.fixed_rate) {
-      return hours * rates.fixed_rate; // Multiply by hours (jobs) for fixed rate
-    }
-    if (rateType === 'hourly' && rates.hourly_rate) {
-      return hours * rates.hourly_rate;
-    }
-    return null;
-  };
-
   // Group timesheets by work type
   const workTypeSummaries = timesheets.reduce<Record<string, WorkTypeSummary>>((acc, timesheet) => {
     const workTypeId = timesheet.work_type_id;
@@ -71,10 +58,17 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     return acc;
   }, {});
 
-  // Calculate total salary across all work types
-  const totalSalary = Object.values(workTypeSummaries).reduce((sum: number, summary) => {
-    const salary = calculateSalary(summary.totalHours, summary.workTypeId, summary.rateType);
-    return sum + (salary || 0);
+  // Calculate total salary by summing up individual work type salaries
+  const totalSalary = Object.values(workTypeSummaries).reduce((total, summary) => {
+    const rates = workTypeRates[summary.workTypeId];
+    if (!rates) return total;
+
+    if (summary.rateType === 'fixed' && rates.fixed_rate) {
+      return total + (summary.totalHours * rates.fixed_rate);
+    } else if (rates.hourly_rate) {
+      return total + (summary.totalHours * rates.hourly_rate);
+    }
+    return total;
   }, 0);
 
   return (
