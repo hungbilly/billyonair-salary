@@ -78,7 +78,20 @@ export const MonthlyTable = ({
     const rate = timesheet.work_types.rate_type === 'fixed' 
       ? rates?.fixed_rate 
       : rates?.hourly_rate;
-    const entryTotal = (rate || 0) * timesheet.hours;
+    
+    if (rate === undefined) {
+      console.log('No rate found for work type:', timesheet.work_type_id);
+      return total;
+    }
+    
+    const entryTotal = rate * timesheet.hours;
+    console.log('Calculating monthly total entry:', {
+      rate_type: timesheet.work_types.rate_type,
+      rate,
+      hours: timesheet.hours,
+      entryTotal
+    });
+    
     return total + entryTotal;
   }, 0);
 

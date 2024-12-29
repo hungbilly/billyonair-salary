@@ -41,12 +41,13 @@ export const MonthlySubmissions = ({
     return acc;
   }, {});
 
-  // Calculate monthly total using the same logic as MonthlyTable
+  // Calculate monthly total
   const calculateMonthTotal = (sheets: Timesheet[]) => {
     return sheets.reduce((total, timesheet) => {
       const rates = workTypeRates[timesheet.work_type_id];
-      const isFixedRate = timesheet.work_types.rate_type === 'fixed';
-      const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
+      const rate = timesheet.work_types.rate_type === 'fixed' 
+        ? rates?.fixed_rate 
+        : rates?.hourly_rate;
       
       if (rate === undefined) {
         console.log('No rate found for work type:', timesheet.work_type_id);
@@ -55,7 +56,7 @@ export const MonthlySubmissions = ({
       
       const entryTotal = rate * timesheet.hours;
       console.log('Calculating entry total:', {
-        isFixedRate,
+        rate_type: timesheet.work_types.rate_type,
         rate,
         hours: timesheet.hours,
         entryTotal
