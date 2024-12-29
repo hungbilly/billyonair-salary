@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateSalaryForTimesheet } from "@/utils/salaryCalculations";
 
 interface TimesheetTableRowProps {
   id: string;
@@ -41,7 +40,8 @@ export const TimesheetTableRow = ({
 }: TimesheetTableRowProps) => {
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
-  const rate = work_types.rate_type === 'fixed' ? rates?.fixed_rate : rates?.hourly_rate;
+  const isFixedRate = work_types.rate_type === 'fixed';
+  const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
   
   // Simple calculation: rate * hours/jobs
   const entryTotal = (rate || 0) * hours;
@@ -82,10 +82,10 @@ export const TimesheetTableRow = ({
       </TableCell>
       <TableCell>{work_types.name}</TableCell>
       <TableCell className="text-right">
-        {hours} {work_types.rate_type === 'fixed' ? 'job(s)' : 'hour(s)'}
+        {hours} {isFixedRate ? 'job(s)' : 'hour(s)'}
       </TableCell>
       <TableCell className="text-right">
-        ${rate?.toFixed(2) || '0.00'}/{work_types.rate_type === 'fixed' ? 'job' : 'hour'}
+        ${rate?.toFixed(2) || '0.00'}/{isFixedRate ? 'job' : 'hour'}
       </TableCell>
       <TableCell className="text-right text-green-600">
         ${entryTotal.toFixed(2)}
