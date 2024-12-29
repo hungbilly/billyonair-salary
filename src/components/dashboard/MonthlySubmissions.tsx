@@ -26,9 +26,10 @@ interface Timesheet {
 interface MonthlySubmissionsProps {
   timesheets: Timesheet[];
   workTypeRates: Record<string, { hourly_rate?: number; fixed_rate?: number; }>;
+  onTimesheetUpdated: () => void;
 }
 
-export const MonthlySubmissions = ({ timesheets, workTypeRates }: MonthlySubmissionsProps) => {
+export const MonthlySubmissions = ({ timesheets, workTypeRates, onTimesheetUpdated }: MonthlySubmissionsProps) => {
   // Group timesheets by month
   const monthlyTimesheets = timesheets.reduce((acc: Record<string, Timesheet[]>, timesheet) => {
     const monthKey = format(new Date(timesheet.work_date), "MMMM yyyy");
@@ -64,7 +65,11 @@ export const MonthlySubmissions = ({ timesheets, workTypeRates }: MonthlySubmiss
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <MonthlyTable timesheets={sheets} workTypeRates={workTypeRates} />
+            <MonthlyTable 
+              timesheets={sheets} 
+              workTypeRates={workTypeRates} 
+              onTimesheetUpdated={onTimesheetUpdated}
+            />
           </AccordionContent>
         </AccordionItem>
       ))}
