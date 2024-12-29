@@ -9,7 +9,7 @@ export const calculateSalary = (
   rates?: WorkTypeRate
 ): number => {
   if (!rates) return 0;
-
+  
   if (rateType === 'fixed' && rates.fixed_rate) {
     return hours * rates.fixed_rate;
   }
