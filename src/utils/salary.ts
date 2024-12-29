@@ -8,7 +8,12 @@ export const calculateSalary = (
   rateType: 'fixed' | 'hourly',
   rates?: WorkTypeRate
 ): number => {
-  if (!rates) return 0;
+  if (!rates) {
+    console.log('No rates provided');
+    return 0;
+  }
+  
+  console.log('Calculating salary:', { hours, rateType, rates });
   
   if (rateType === 'fixed' && rates.fixed_rate) {
     return hours * rates.fixed_rate;
@@ -16,5 +21,7 @@ export const calculateSalary = (
   if (rateType === 'hourly' && rates.hourly_rate) {
     return hours * rates.hourly_rate;
   }
+  
+  console.log('No matching rate type found');
   return 0;
 };

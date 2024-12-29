@@ -41,10 +41,11 @@ export const MonthlySubmissions = ({ timesheets, workTypeRates }: MonthlySubmiss
 
   const calculateMonthlyTotal = (sheets: Timesheet[]): number => {
     return sheets.reduce((total, sheet) => {
+      const rates = workTypeRates[sheet.work_type_id];
       const salary = calculateSalary(
         sheet.hours,
         sheet.work_types.rate_type,
-        workTypeRates[sheet.work_type_id]
+        rates
       );
       return total + salary;
     }, 0);

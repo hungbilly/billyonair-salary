@@ -31,12 +31,16 @@ export const TimesheetTableRow = ({
   workTypeRates,
 }: TimesheetTableRowProps) => {
   const rates = workTypeRates[work_type_id];
+  console.log('Work type:', work_types);
+  console.log('Rates:', rates);
+  console.log('Hours:', hours);
   
   const salary = calculateSalary(
     hours,
     work_types.rate_type,
     rates
   );
+  console.log('Calculated salary:', salary);
 
   return (
     <TableRow>
