@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateSalary } from "@/utils/salary";
 
 interface TimesheetTableRowProps {
   id: string;
@@ -41,16 +42,7 @@ export const TimesheetTableRow = ({
   const { toast } = useToast();
   const rates = workTypeRates[work_type_id];
   
-  const calculateSalary = (): number => {
-    if (!rates) return 0;
-    
-    if (work_types.rate_type === 'fixed' && rates.fixed_rate) {
-      return rates.fixed_rate * hours;
-    } else if (work_types.rate_type === 'hourly' && rates.hourly_rate) {
-      return rates.hourly_rate * hours;
-    }
-    return 0;
-  };
+  const salary = calculateSalary(hours, work_types.rate_type, rates);
 
   const handleDelete = async () => {
     try {
@@ -75,8 +67,6 @@ export const TimesheetTableRow = ({
       });
     }
   };
-
-  const salary = calculateSalary();
 
   return (
     <TableRow>
