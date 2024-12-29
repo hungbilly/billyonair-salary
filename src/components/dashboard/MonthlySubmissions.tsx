@@ -45,10 +45,22 @@ export const MonthlySubmissions = ({
   const calculateMonthTotal = (sheets: Timesheet[]) => {
     return sheets.reduce((total, timesheet) => {
       const rates = workTypeRates[timesheet.work_type_id];
-      const rate = timesheet.work_types.rate_type === 'fixed' 
-        ? rates?.fixed_rate 
-        : rates?.hourly_rate;
-      const entryTotal = (rate || 0) * timesheet.hours;
+      const isFixedRate = timesheet.work_types.rate_type === 'fixed';
+      const rate = isFixedRate ? rates?.fixed_rate : rates?.hourly_rate;
+      
+      if (rate === undefined) {
+        console.log('No rate found for work type:', timesheet.work_type_id);
+        return total;
+      }
+      
+      const entryTotal = rate * timesheet.hours;
+      console.log('Calculating entry total:', {
+        isFixedRate,
+        rate,
+        hours: timesheet.hours,
+        entryTotal
+      });
+      
       return total + entryTotal;
     }, 0);
   };
