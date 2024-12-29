@@ -13,15 +13,19 @@ export const calculateSalary = (
     return 0;
   }
   
-  console.log('Calculating salary:', { hours, rateType, rates });
-  
+  if (!rateType) {
+    console.log('No rate type provided');
+    return 0;
+  }
+
   if (rateType === 'fixed' && rates.fixed_rate) {
     return hours * rates.fixed_rate;
   }
+  
   if (rateType === 'hourly' && rates.hourly_rate) {
     return hours * rates.hourly_rate;
   }
   
-  console.log('No matching rate type found');
+  console.log('No matching rate for type:', rateType);
   return 0;
 };
