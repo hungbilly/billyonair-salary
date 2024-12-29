@@ -43,39 +43,54 @@ export const MonthlySubmissions = ({
 
   // Calculate monthly total by simply summing up entry totals
   const calculateMonthTotal = (sheets: Timesheet[]) => {
+    console.log('Calculating monthly total for sheets:', sheets);
     return sheets.reduce((total, timesheet) => {
       const rates = workTypeRates[timesheet.work_type_id];
       const rate = timesheet.work_types.rate_type === 'fixed' 
         ? rates?.fixed_rate 
         : rates?.hourly_rate;
       
+      console.log('Entry calculation:', {
+        date: timesheet.work_date,
+        workType: timesheet.work_types.name,
+        hours: timesheet.hours,
+        rate: rate,
+        entryTotal: rate ? rate * timesheet.hours : 0
+      });
+      
       if (!rate) return total;
       
-      return total + (rate * timesheet.hours);
+      const newTotal = total + (rate * timesheet.hours);
+      console.log('Running total:', newTotal);
+      return newTotal;
     }, 0);
   };
 
   return (
     <Accordion type="single" collapsible className="w-full">
-      {Object.entries(monthlyTimesheets).map(([month, sheets]) => (
-        <AccordionItem value={month} key={month}>
-          <AccordionTrigger className="text-lg font-semibold">
-            <div className="flex justify-between w-full pr-4">
-              <span>{month}</span>
-              <span className="text-green-600">
-                ${calculateMonthTotal(sheets).toFixed(2)}
-              </span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <MonthlyTable 
-              timesheets={sheets} 
-              workTypeRates={workTypeRates} 
-              onTimesheetUpdated={onTimesheetUpdated}
-            />
-          </AccordionContent>
-        </AccordionItem>
-      ))}
+      {Object.entries(monthlyTimesheets).map(([month, sheets]) => {
+        const monthTotal = calculateMonthTotal(sheets);
+        console.log(`Total for ${month}:`, monthTotal);
+        return (
+          <AccordionItem value={month} key={month}>
+            <AccordionTrigger className="text-lg font-semibold">
+              <div className="flex justify-between w-full pr-4">
+                <span>{month}</span>
+                <span className="text-green-600">
+                  ${monthTotal.toFixed(2)}
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <MonthlyTable 
+                timesheets={sheets} 
+                workTypeRates={workTypeRates} 
+                onTimesheetUpdated={onTimesheetUpdated}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+      })}
     </Accordion>
   );
 };
