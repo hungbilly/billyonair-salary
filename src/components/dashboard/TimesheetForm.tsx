@@ -165,27 +165,31 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
 
   return (
     <div className={`w-full ${editingTimesheet ? 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 overflow-y-auto' : ''}`}>
-      <div className={`${editingTimesheet ? 'min-h-screen flex items-center justify-center p-4' : ''}`}>
-        <Card className={`w-full max-w-2xl mx-auto ${editingTimesheet ? 'relative' : ''}`}>
-          <CardHeader>
-            <CardTitle>{editingTimesheet ? "Edit Entry" : "Log Salary"}</CardTitle>
+      <div className={`${editingTimesheet ? 'min-h-screen flex items-center justify-center p-4 md:p-8' : ''}`}>
+        <Card className={`w-full md:w-[800px] mx-auto ${editingTimesheet ? 'relative shadow-lg' : ''}`}>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl">
+              {editingTimesheet ? "Edit Entry" : "Log Salary"}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
+          <CardContent className="p-6">
+            <div className="grid gap-6">
               <WorkTypeSelect
                 workTypes={workTypes}
                 selectedWorkType={selectedWorkType}
                 onWorkTypeChange={setSelectedWorkType}
               />
               
-              <div className="grid gap-2">
-                <Label>Date</Label>
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border mx-auto"
-                />
+              <div className="grid gap-3">
+                <Label className="text-base">Date</Label>
+                <div className="flex justify-center bg-white rounded-lg p-4">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="rounded-md border mx-auto"
+                  />
+                </div>
               </div>
 
               <TimeInputs
@@ -202,12 +206,15 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
               />
 
               {salary !== null && (
-                <div className="text-lg font-semibold text-green-600">
+                <div className="text-lg font-semibold text-green-600 bg-green-50 p-4 rounded-lg text-center">
                   Estimated Salary: ${salary.toFixed(2)}
                 </div>
               )}
               
-              <Button onClick={handleSubmit}>
+              <Button 
+                onClick={handleSubmit}
+                className="w-full py-6 text-lg"
+              >
                 {editingTimesheet ? "Update Entry" : "Log Salary"}
               </Button>
             </div>
