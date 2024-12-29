@@ -7,6 +7,7 @@ import { PlusCircle, Users, Clock, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { WorkTypesList } from "./WorkTypesList";
+import { StaffRatesTable } from "./StaffRatesTable";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const EmployerDashboard = () => {
@@ -107,6 +108,7 @@ export const EmployerDashboard = () => {
       </div>
 
       <WorkTypesList />
+      <StaffRatesTable />
     </div>
   );
 };
