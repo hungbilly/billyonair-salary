@@ -40,11 +40,11 @@ export const MonthlySubmissions = ({ timesheets, workTypeRates }: MonthlySubmiss
     const rates = workTypeRates[timesheet.work_type_id];
     if (!rates) return 0;
 
+    if (timesheet.work_types.rate_type === 'fixed' && rates.fixed_rate) {
+      return rates.fixed_rate * timesheet.hours; // Multiply by hours for multiple fixed-rate jobs
+    }
     if (timesheet.work_types.rate_type === 'hourly' && rates.hourly_rate) {
       return timesheet.hours * rates.hourly_rate;
-    }
-    if (timesheet.work_types.rate_type === 'fixed' && rates.fixed_rate) {
-      return rates.fixed_rate;
     }
     return 0;
   };
