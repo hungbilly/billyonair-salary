@@ -7,63 +7,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { AssignWorkTypeForm } from "./assign-work-type/AssignWorkTypeForm";
+import { useStaffList } from "./assign-work-type/useStaffList";
 
 export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; onAssigned?: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedStaff, setSelectedStaff] = useState<string>("");
-  const [staffList, setStaffList] = useState<any[]>([]);
-  const [rate, setRate] = useState<string>("");
+  const { staffList, fetchStaffList } = useStaffList();
   const { toast } = useToast();
 
-  const fetchStaffList = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      // First check if the current user is an employer
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) throw profileError;
-      
-      if (profile.role !== 'employer' && profile.role !== 'admin') {
-        throw new Error("Only employers can assign work types");
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .eq("role", "staff");
-
-      if (error) throw error;
-      setStaffList(data || []);
-    } catch (error: any) {
-      console.error("Error fetching staff:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch staff list",
-        variant: "destructive",
-      });
-      setIsOpen(false);
-    }
-  };
-
-  const handleAssign = async () => {
+  const handleAssign = async (selectedStaff: string, rate: string) => {
     try {
       if (!selectedStaff || !rate) {
         toast({
@@ -87,7 +42,6 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Verify user is an employer before proceeding
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
@@ -100,25 +54,6 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
         throw new Error("Only employers can assign work types");
       }
 
-      // Check if assignment already exists
-      const { data: existingAssignment, error: checkError } = await supabase
-        .from("work_type_assignments")
-        .select("id")
-        .eq("work_type_id", workType.id)
-        .eq("staff_id", selectedStaff)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (existingAssignment) {
-        toast({
-          title: "Error",
-          description: "This staff member is already assigned to this work type",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { error: insertError } = await supabase
         .from("work_type_assignments")
         .insert({
@@ -128,7 +63,6 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
         });
 
       if (insertError) {
-        // Check if it's a duplicate error
         if (insertError.code === '23505') {
           toast({
             title: "Error",
@@ -146,8 +80,6 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
       });
 
       setIsOpen(false);
-      setSelectedStaff("");
-      setRate("");
       if (onAssigned) onAssigned();
     } catch (error: any) {
       console.error("Error assigning work type:", error);
@@ -173,35 +105,11 @@ export const AssignWorkTypeDialog = ({ workType, onAssigned }: { workType: any; 
         <DialogHeader>
           <DialogTitle>Assign Work Type to Staff</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Select Staff Member</Label>
-            <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select staff member" />
-              </SelectTrigger>
-              <SelectContent>
-                {staffList.map((staff) => (
-                  <SelectItem key={staff.id} value={staff.id}>
-                    {staff.full_name || staff.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>{workType.rate_type === "hourly" ? "Hourly Rate" : "Fixed Rate"}</Label>
-            <Input
-              type="number"
-              placeholder="Enter rate"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-            />
-          </div>
-          <Button onClick={handleAssign} className="w-full">
-            Assign Work Type
-          </Button>
-        </div>
+        <AssignWorkTypeForm 
+          staffList={staffList}
+          workType={workType}
+          onSubmit={handleAssign}
+        />
       </DialogContent>
     </Dialog>
   );
