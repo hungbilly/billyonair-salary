@@ -41,6 +41,12 @@ export const MonthlyTable = ({
   const [workTypes, setWorkTypes] = useState<any[]>([]);
   const { toast } = useToast();
 
+  // Debug log for initial props
+  console.log('MonthlyTable - Initial props:', {
+    timesheets,
+    workTypeRates
+  });
+
   useEffect(() => {
     const fetchWorkTypes = async () => {
       try {
@@ -58,6 +64,7 @@ export const MonthlyTable = ({
           .eq('work_type_assignments.staff_id', (await supabase.auth.getUser()).data.user?.id || '');
 
         if (error) throw error;
+        console.log('MonthlyTable - Fetched work types:', workTypesData);
         setWorkTypes(workTypesData || []);
       } catch (error: any) {
         console.error('Error fetching work types:', error);
@@ -75,11 +82,15 @@ export const MonthlyTable = ({
   // Calculate monthly total by summing up all entry totals
   const monthTotal = timesheets.reduce((total, timesheet) => {
     const rates = workTypeRates[timesheet.work_type_id];
-    console.log('Monthly Total - Processing timesheet:', {
+    
+    // Debug log for each timesheet entry
+    console.log('MonthlyTable - Processing timesheet entry:', {
+      id: timesheet.id,
       workTypeName: timesheet.work_types.name,
       workTypeId: timesheet.work_type_id,
       hours: timesheet.hours,
       rateType: timesheet.work_types.rate_type,
+      workTypes: timesheet.work_types,
       availableRates: rates
     });
 
@@ -90,8 +101,13 @@ export const MonthlyTable = ({
     
     const entryTotal = rate ? rate * timesheet.hours : 0;
     
-    console.log('Monthly Total - Entry calculation:', {
-      rate,
+    // Debug log for rate calculation
+    console.log('MonthlyTable - Rate calculation:', {
+      rateType: timesheet.work_types.rate_type,
+      isFixedRate: timesheet.work_types.rate_type === 'fixed',
+      selectedRate: rate,
+      fixedRate: rates?.fixed_rate,
+      hourlyRate: rates?.hourly_rate,
       hours: timesheet.hours,
       entryTotal,
       runningTotal: total + entryTotal
@@ -115,15 +131,24 @@ export const MonthlyTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {timesheets.map((sheet) => (
-            <TimesheetTableRow
-              key={sheet.id}
-              {...sheet}
-              workTypeRates={workTypeRates}
-              onDelete={onTimesheetUpdated}
-              onEdit={setEditingTimesheet}
-            />
-          ))}
+          {timesheets.map((sheet) => {
+            // Debug log for each row being rendered
+            console.log('MonthlyTable - Rendering row:', {
+              id: sheet.id,
+              workType: sheet.work_types,
+              rateType: sheet.work_types.rate_type
+            });
+            
+            return (
+              <TimesheetTableRow
+                key={sheet.id}
+                {...sheet}
+                workTypeRates={workTypeRates}
+                onDelete={onTimesheetUpdated}
+                onEdit={setEditingTimesheet}
+              />
+            );
+          })}
           <TableRow className="font-bold">
             <TableCell colSpan={5} className="text-right">
               Monthly Total:
