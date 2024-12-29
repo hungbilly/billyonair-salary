@@ -76,6 +76,11 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
     return sum + (salary || 0);
   }, 0);
 
+  const handleTimesheetUpdated = () => {
+    // Refresh work type rates
+    fetchWorkTypeRates();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -101,6 +106,7 @@ export const TimesheetSummary = ({ timesheets }: TimesheetSummaryProps) => {
             <MonthlySubmissions 
               timesheets={timesheets} 
               workTypeRates={workTypeRates}
+              onTimesheetUpdated={handleTimesheetUpdated}
             />
           </div>
         </div>
