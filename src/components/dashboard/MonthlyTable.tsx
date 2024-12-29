@@ -72,6 +72,34 @@ export const MonthlyTable = ({
     fetchWorkTypes();
   }, [toast]);
 
+  // Calculate monthly total by summing up all entry totals
+  const monthTotal = timesheets.reduce((total, timesheet) => {
+    const rates = workTypeRates[timesheet.work_type_id];
+    console.log('Monthly Total - Processing timesheet:', {
+      workTypeName: timesheet.work_types.name,
+      workTypeId: timesheet.work_type_id,
+      hours: timesheet.hours,
+      rateType: timesheet.work_types.rate_type,
+      availableRates: rates
+    });
+
+    // Determine rate based on the work type's rate_type
+    const rate = timesheet.work_types.rate_type === 'fixed' 
+      ? rates?.fixed_rate 
+      : rates?.hourly_rate;
+    
+    const entryTotal = rate ? rate * timesheet.hours : 0;
+    
+    console.log('Monthly Total - Entry calculation:', {
+      rate,
+      hours: timesheet.hours,
+      entryTotal,
+      runningTotal: total + entryTotal
+    });
+
+    return total + entryTotal;
+  }, 0);
+
   return (
     <>
       <Table>
@@ -82,6 +110,7 @@ export const MonthlyTable = ({
             <TableHead>Work Type</TableHead>
             <TableHead className="text-right">Hours/Jobs</TableHead>
             <TableHead className="text-right">Rate</TableHead>
+            <TableHead className="text-right">Entry Total</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -95,6 +124,15 @@ export const MonthlyTable = ({
               onEdit={setEditingTimesheet}
             />
           ))}
+          <TableRow className="font-bold">
+            <TableCell colSpan={5} className="text-right">
+              Monthly Total:
+            </TableCell>
+            <TableCell className="text-right text-green-600">
+              ${monthTotal.toFixed(2)}
+            </TableCell>
+            <TableCell />
+          </TableRow>
         </TableBody>
       </Table>
 
