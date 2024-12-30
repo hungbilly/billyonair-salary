@@ -51,8 +51,7 @@ export const useStaffSalaryData = (selectedStaffId: string) => {
             rate_type
           )
         `)
-        .eq("employee_id", selectedStaffId)
-        .order('work_date', { ascending: false });
+        .eq("employee_id", selectedStaffId);
 
       if (timesheetsError) {
         console.error("Error fetching timesheets:", timesheetsError);
