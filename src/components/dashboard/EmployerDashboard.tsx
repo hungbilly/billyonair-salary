@@ -1,114 +1,107 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PlusCircle, Users, Clock, DollarSign } from "lucide-react";
+import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { DashboardCards } from "./DashboardCards";
+import { CreateWorkTypeDialog } from "./CreateWorkTypeDialog";
+import { CreateUserDialog } from "./CreateUserDialog";
+import { UserManagement } from "./UserManagement";
 import { WorkTypesList } from "./WorkTypesList";
-import { StaffRatesTable } from "./StaffRatesTable";
-import { useQueryClient } from "@tanstack/react-query";
+import { StaffList } from "./StaffList";
+import { StaffSalaryReport } from "./StaffSalaryReport";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const EmployerDashboard = () => {
-  const [newWorkTypeName, setNewWorkTypeName] = useState("");
-  const [isAddingWorkType, setIsAddingWorkType] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const handleAddWorkType = async () => {
+  useEffect(() => {
+    fetchUsers();
+    fetchCurrentUser();
+  }, []);
+
+  const fetchCurrentUser = async () => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("No user found");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
-      const { error } = await supabase.from("work_types").insert({
-        name: newWorkTypeName,
-        created_by: userData.user.id,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Work type added successfully",
-      });
-
-      setNewWorkTypeName("");
-      setIsAddingWorkType(false);
-      // Invalidate and refetch work types query
-      queryClient.invalidateQueries({ queryKey: ["workTypes"] });
+        if (error) throw error;
+        setCurrentUser(data);
+      }
     } catch (error: any) {
-      console.error("Error adding work type:", error);
       toast({
         title: "Error",
-        description: "Failed to add work type",
+        description: "Failed to fetch user details",
         variant: "destructive",
       });
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch users",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Employer Dashboard</h1>
-        <Dialog open={isAddingWorkType} onOpenChange={setIsAddingWorkType}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Work Type
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Work Type</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                placeholder="Work Type Name"
-                value={newWorkTypeName}
-                onChange={(e) => setNewWorkTypeName(e.target.value)}
-              />
-              <Button onClick={handleAddWorkType} disabled={!newWorkTypeName}>
-                Add Work Type
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">164</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Payroll</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$12,450</div>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
+        <div>
+          <p className="text-sm text-muted-foreground">Welcome back,</p>
+          <h1 className="text-3xl font-bold">{currentUser?.full_name || 'Employer'}</h1>
+        </div>
+        <div className="flex gap-2">
+          <CreateUserDialog onUserCreated={fetchUsers} />
+          <CreateWorkTypeDialog />
+          <Button variant="outline">
+            <Settings className="mr-2 h-4 w-4" /> Settings
+          </Button>
+        </div>
       </div>
 
-      <WorkTypesList />
-      <StaffRatesTable />
+      <DashboardCards
+        totalUsers={users.length}
+        activeStaffCount={users.filter((user) => user.role === "staff").length}
+      />
+
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="salary-report">Salary Report</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <div className="grid gap-6 md:grid-cols-2">
+            <StaffList users={users} />
+            <WorkTypesList />
+          </div>
+          <UserManagement users={users} onUserUpdated={fetchUsers} />
+        </TabsContent>
+        <TabsContent value="salary-report">
+          <StaffSalaryReport />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
