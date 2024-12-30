@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WorkTypeAssignment {
   work_type_id: string;
@@ -34,70 +35,74 @@ interface Timesheet extends TimesheetData {
 
 export const MonthlySummary = () => {
   const currentDate = new Date();
-  const startDate = startOfMonth(currentDate);
-  const endDate = endOfMonth(currentDate);
+  const previousMonth = subMonths(currentDate, 1);
 
-  const { data: timesheets, isLoading: isLoadingTimesheets } = useQuery({
-    queryKey: ["timesheets", format(startDate, "yyyy-MM")],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+  const { data: currentMonthData, isLoading: isLoadingCurrent } = useQuery({
+    queryKey: ["timesheets", format(currentDate, "yyyy-MM")],
+    queryFn: async () => fetchMonthData(currentDate)
+  });
 
-      // First, get the work type assignments for the user
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('work_type_assignments')
-        .select('work_type_id, hourly_rate, fixed_rate')
-        .eq('staff_id', user.id);
+  const { data: previousMonthData, isLoading: isLoadingPrevious } = useQuery({
+    queryKey: ["timesheets", format(previousMonth, "yyyy-MM")],
+    queryFn: async () => fetchMonthData(previousMonth)
+  });
 
-      if (assignmentsError) throw assignmentsError;
+  const fetchMonthData = async (date: Date) => {
+    const startDate = startOfMonth(date);
+    const endDate = endOfMonth(date);
 
-      // Then get the timesheets with work types
-      const { data, error } = await supabase
-        .from("timesheets")
-        .select(`
-          *,
-          work_types (
-            name,
-            rate_type
-          )
-        `)
-        .eq("employee_id", user.id)
-        .gte("work_date", startDate.toISOString())
-        .lte("work_date", endDate.toISOString());
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
 
-      if (error) throw error;
+    // First, get the work type assignments for the user
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('work_type_assignments')
+      .select('work_type_id, hourly_rate, fixed_rate')
+      .eq('staff_id', user.id);
 
-      // Combine the data with proper typing
-      const timesheetsWithRates: Timesheet[] = (data as TimesheetData[]).map(timesheet => ({
-        ...timesheet,
-        work_type_assignments: assignments.filter(
-          assignment => assignment.work_type_id === timesheet.work_type_id
+    if (assignmentsError) throw assignmentsError;
+
+    // Then get the timesheets with work types
+    const { data, error } = await supabase
+      .from("timesheets")
+      .select(`
+        *,
+        work_types (
+          name,
+          rate_type
         )
-      }));
+      `)
+      .eq("employee_id", user.id)
+      .gte("work_date", startDate.toISOString())
+      .lte("work_date", endDate.toISOString());
 
-      return timesheetsWithRates;
-    }
-  });
+    if (error) throw error;
 
-  const { data: expenses, isLoading: isLoadingExpenses } = useQuery({
-    queryKey: ["expenses", format(startDate, "yyyy-MM")],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+    // Combine the data with proper typing
+    const timesheetsWithRates: Timesheet[] = (data as TimesheetData[]).map(timesheet => ({
+      ...timesheet,
+      work_type_assignments: assignments.filter(
+        assignment => assignment.work_type_id === timesheet.work_type_id
+      )
+    }));
 
-      const { data, error } = await supabase
-        .from("expenses")
-        .select("*")
-        .eq("staff_id", user.id)
-        .gte("expense_date", startDate.toISOString())
-        .lte("expense_date", endDate.toISOString());
+    // Also fetch expenses for the month
+    const { data: monthExpenses, error: expensesError } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("staff_id", user.id)
+      .gte("expense_date", startDate.toISOString())
+      .lte("expense_date", endDate.toISOString());
 
-      if (error) throw error;
-      return data || [];
-    }
-  });
+    if (expensesError) throw expensesError;
 
-  const calculateTotalSalary = () => {
+    return {
+      timesheets: timesheetsWithRates,
+      expenses: monthExpenses || []
+    };
+  };
+
+  const calculateTotalSalary = (timesheets: Timesheet[]) => {
     if (!timesheets) return 0;
     
     return timesheets.reduce((total, timesheet) => {
@@ -117,12 +122,12 @@ export const MonthlySummary = () => {
     }, 0);
   };
 
-  const calculateTotalExpenses = () => {
+  const calculateTotalExpenses = (expenses: any[]) => {
     if (!expenses) return 0;
     return expenses.reduce((total, expense) => total + expense.amount, 0);
   };
 
-  if (isLoadingTimesheets || isLoadingExpenses) {
+  if (isLoadingCurrent || isLoadingPrevious) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-32" />
@@ -131,53 +136,76 @@ export const MonthlySummary = () => {
     );
   }
 
-  const totalSalary = calculateTotalSalary();
-  const totalExpenses = calculateTotalExpenses();
-  const netAmount = totalSalary + totalExpenses;
+  const renderMonthSummary = (data: any, date: Date) => {
+    if (!data) return null;
+
+    const totalSalary = calculateTotalSalary(data.timesheets);
+    const totalExpenses = calculateTotalExpenses(data.expenses);
+    const netAmount = totalSalary + totalExpenses;
+
+    return (
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Salary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-green-600">
+              ${totalSalary.toFixed(2)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              For {format(date, "MMMM yyyy")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-blue-600">
+              ${totalExpenses.toFixed(2)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              For {format(date, "MMMM yyyy")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Net Amount</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-2xl font-bold ${netAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${netAmount.toFixed(2)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              For {format(date, "MMMM yyyy")}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Salary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold text-green-600">
-            ${totalSalary.toFixed(2)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            For {format(startDate, "MMMM yyyy")}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Expenses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold text-blue-600">
-            ${totalExpenses.toFixed(2)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            For {format(startDate, "MMMM yyyy")}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Net Amount</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className={`text-2xl font-bold ${netAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            ${netAmount.toFixed(2)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            For {format(startDate, "MMMM yyyy")}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <Tabs defaultValue={format(currentDate, "yyyy-MM")}>
+      <TabsList>
+        <TabsTrigger value={format(currentDate, "yyyy-MM")}>
+          {format(currentDate, "MMMM yyyy")}
+        </TabsTrigger>
+        <TabsTrigger value={format(previousMonth, "yyyy-MM")}>
+          {format(previousMonth, "MMMM yyyy")}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value={format(currentDate, "yyyy-MM")}>
+        {renderMonthSummary(currentMonthData, currentDate)}
+      </TabsContent>
+      <TabsContent value={format(previousMonth, "yyyy-MM")}>
+        {renderMonthSummary(previousMonthData, previousMonth)}
+      </TabsContent>
+    </Tabs>
   );
 };
