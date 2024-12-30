@@ -36,7 +36,7 @@ export const TimesheetDownload = ({
   const downloadTableData = (format: 'csv' | 'xlsx') => {
     // Prepare the data
     const data = timesheets.map(timesheet => {
-      const entryTotal = calculateEntryTotal(timesheet, workTypeRates);
+      const entryTotal = Number(calculateEntryTotal(timesheet, workTypeRates));
       const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate 
         ? Number(timesheet.custom_rate) 
         : (timesheet.work_types.rate_type === 'fixed' 
@@ -51,7 +51,7 @@ export const TimesheetDownload = ({
         'Work Type': timesheet.work_types.name === "Other" && timesheet.description
           ? `Other: ${timesheet.description}`
           : timesheet.work_types.name,
-        'Hours/Jobs': timesheet.hours,
+        'Hours/Jobs': Number(timesheet.hours),
         'Rate': `$${rate.toFixed(2)}${timesheet.work_types.rate_type === 'hourly' ? '/hr' : ''}`,
         'Entry Total': `$${entryTotal.toFixed(2)}`
       };
@@ -59,7 +59,7 @@ export const TimesheetDownload = ({
 
     // Add monthly total row
     const monthTotal = Number(timesheets.reduce((total, timesheet) => 
-      total + calculateEntryTotal(timesheet, workTypeRates), 0));
+      Number(total) + Number(calculateEntryTotal(timesheet, workTypeRates)), 0));
 
     data.push({
       'Date': '',
