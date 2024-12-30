@@ -4,6 +4,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { TimesheetForm } from "./TimesheetForm";
 import { TimesheetSummary } from "./TimesheetSummary";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ExpenseForm } from "./expense/ExpenseForm";
+import { ExpenseList } from "./expense/ExpenseList";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const StaffDashboard = () => {
   const [workTypes, setWorkTypes] = useState<any[]>([]);
@@ -42,6 +45,10 @@ export const StaffDashboard = () => {
   const handleTimesheetUpdated = () => {
     console.log("Invalidating timesheets query...");
     queryClient.invalidateQueries({ queryKey: ["timesheets"] });
+  };
+
+  const handleExpenseAdded = () => {
+    queryClient.invalidateQueries({ queryKey: ["expenses"] });
   };
 
   useEffect(() => {
@@ -118,14 +125,26 @@ export const StaffDashboard = () => {
         </div>
       </div>
       
-      <TimesheetForm 
-        workTypes={workTypes} 
-        onTimesheetAdded={handleTimesheetUpdated} 
-      />
-      <TimesheetSummary 
-        timesheets={timesheets} 
-        onTimesheetUpdated={handleTimesheetUpdated}
-      />
+      <Tabs defaultValue="timesheets">
+        <TabsList>
+          <TabsTrigger value="timesheets">Timesheets</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+        </TabsList>
+        <TabsContent value="timesheets" className="space-y-6">
+          <TimesheetForm 
+            workTypes={workTypes} 
+            onTimesheetAdded={handleTimesheetUpdated} 
+          />
+          <TimesheetSummary 
+            timesheets={timesheets} 
+            onTimesheetUpdated={handleTimesheetUpdated}
+          />
+        </TabsContent>
+        <TabsContent value="expenses" className="space-y-6">
+          <ExpenseForm onExpenseAdded={handleExpenseAdded} />
+          <ExpenseList />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

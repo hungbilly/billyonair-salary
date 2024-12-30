@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          receipt_path: string | null
+          staff_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          expense_date: string
+          id?: string
+          receipt_path?: string | null
+          staff_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          receipt_path?: string | null
+          staff_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
