@@ -52,7 +52,7 @@ export const TimesheetDownload = ({
         'Work Type': timesheet.work_types.name === "Other" && timesheet.description
           ? `Other: ${timesheet.description}`
           : timesheet.work_types.name,
-        'Hours/Jobs': timesheet.hours,
+        'Hours/Jobs': Number(timesheet.hours),
         'Rate': Number(rate),
         'Entry Total': Number(entryTotal)
       };
@@ -82,7 +82,10 @@ export const TimesheetDownload = ({
       if (rateCell && typeof rateCell.v === 'number') {
         rateCell.z = '"$"#,##0.00';
         if (R < range.e.r) { // Not the last row (Monthly Total row)
-          rateCell.z += timesheet.work_types.rate_type === 'hourly' ? '"/hr"' : '';
+          const currentTimesheet = timesheets[R];
+          if (currentTimesheet) {
+            rateCell.z += currentTimesheet.work_types.rate_type === 'hourly' ? '"/hr"' : '';
+          }
         }
       }
       if (totalCell && typeof totalCell.v === 'number') {
