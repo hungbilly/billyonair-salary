@@ -4,6 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface Timesheet {
+  id: string;
+  hours: number;
+  work_types: {
+    name: string;
+    rate_type: 'fixed' | 'hourly';
+  };
+  work_type_assignments: {
+    hourly_rate: number | null;
+    fixed_rate: number | null;
+  }[];
+}
+
 export const MonthlySummary = () => {
   const currentDate = new Date();
   const startDate = startOfMonth(currentDate);
@@ -23,17 +36,18 @@ export const MonthlySummary = () => {
             name,
             rate_type
           ),
-          work_type_assignments!inner (
+          work_type_assignments (
             hourly_rate,
             fixed_rate
           )
         `)
         .eq("employee_id", user.id)
+        .eq("work_type_assignments.staff_id", user.id)
         .gte("work_date", startDate.toISOString())
         .lte("work_date", endDate.toISOString());
 
       if (error) throw error;
-      return data || [];
+      return data as Timesheet[];
     }
   });
 
@@ -59,13 +73,13 @@ export const MonthlySummary = () => {
     if (!timesheets) return 0;
     
     return timesheets.reduce((total, timesheet) => {
-      const rate = timesheet.work_type_assignments[0];
-      if (!rate) return total;
+      const assignment = timesheet.work_type_assignments[0];
+      if (!assignment) return total;
 
       if (timesheet.work_types.rate_type === 'fixed') {
-        return total + (rate.fixed_rate || 0) * timesheet.hours;
+        return total + (assignment.fixed_rate || 0) * timesheet.hours;
       } else {
-        return total + (rate.hourly_rate || 0) * timesheet.hours;
+        return total + (assignment.hourly_rate || 0) * timesheet.hours;
       }
     }, 0);
   };
