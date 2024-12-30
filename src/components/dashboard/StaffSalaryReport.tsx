@@ -53,6 +53,20 @@ export const StaffSalaryReport = () => {
 
       console.log("Fetching salary data for staff:", selectedStaffId);
 
+      // First, get the work type assignments for this staff member
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from("work_type_assignments")
+        .select("work_type_id, hourly_rate, fixed_rate")
+        .eq("staff_id", selectedStaffId);
+
+      if (assignmentsError) {
+        console.error("Error fetching assignments:", assignmentsError);
+        throw assignmentsError;
+      }
+
+      console.log("Staff work type assignments:", assignments);
+
+      // Then fetch timesheets with work types
       const { data: timesheets, error: timesheetsError } = await supabase
         .from("timesheets")
         .select(`
@@ -67,11 +81,7 @@ export const StaffSalaryReport = () => {
           work_types (
             id,
             name,
-            rate_type,
-            work_type_assignments (
-              hourly_rate,
-              fixed_rate
-            )
+            rate_type
           )
         `)
         .eq("employee_id", selectedStaffId)
@@ -84,6 +94,20 @@ export const StaffSalaryReport = () => {
 
       console.log("Fetched timesheets:", timesheets);
 
+      // Combine timesheets with their assignments
+      const timesheetsWithRates = timesheets?.map((timesheet: any) => ({
+        ...timesheet,
+        work_types: {
+          ...timesheet.work_types,
+          work_type_assignments: [
+            assignments?.find((a: any) => a.work_type_id === timesheet.work_type_id) || 
+            { hourly_rate: null, fixed_rate: null }
+          ]
+        }
+      }));
+
+      console.log("Timesheets with rates:", timesheetsWithRates);
+
       const { data: expenses, error: expensesError } = await supabase
         .from("expenses")
         .select("*")
@@ -93,7 +117,7 @@ export const StaffSalaryReport = () => {
       if (expensesError) throw expensesError;
 
       return {
-        timesheets: timesheets || [],
+        timesheets: timesheetsWithRates || [],
         expenses: expenses || []
       };
     },
