@@ -5,6 +5,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
+interface WorkTypeAssignment {
+  hourly_rate: number | null;
+  fixed_rate: number | null;
+}
+
+interface Timesheet {
+  id: string;
+  work_date: string;
+  hours: number;
+  work_types: {
+    name: string;
+    rate_type: 'fixed' | 'hourly';
+    work_type_assignments: WorkTypeAssignment[];
+  };
+}
+
+interface Expense {
+  id: string;
+  amount: number;
+  description: string;
+  expense_date: string;
+}
+
 export const StaffSalaryReport = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string>("");
 
@@ -33,11 +56,11 @@ export const StaffSalaryReport = () => {
           *,
           work_types (
             name,
-            rate_type
-          ),
-          work_type_assignments!inner (
-            hourly_rate,
-            fixed_rate
+            rate_type,
+            work_type_assignments (
+              hourly_rate,
+              fixed_rate
+            )
           )
         `)
         .eq("employee_id", selectedStaffId)
@@ -65,7 +88,10 @@ export const StaffSalaryReport = () => {
     if (!salaryData?.timesheets) return 0;
     
     return salaryData.timesheets.reduce((total, timesheet) => {
-      const assignment = timesheet.work_type_assignments[0];
+      const assignments = timesheet.work_types.work_type_assignments;
+      if (!assignments || assignments.length === 0) return total;
+
+      const assignment = assignments[0];
       if (!assignment) return total;
 
       if (timesheet.work_types.rate_type === 'fixed') {
@@ -145,20 +171,22 @@ export const StaffSalaryReport = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {salaryData.timesheets.slice(0, 5).map((timesheet) => (
-                    <div key={timesheet.id} className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{timesheet.work_types.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(timesheet.work_date), 'MMM d, yyyy')}
+                  {salaryData.timesheets.slice(0, 5).map((timesheet) => {
+                    const assignment = timesheet.work_types.work_type_assignments[0];
+                    return (
+                      <div key={timesheet.id} className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">{timesheet.work_types.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(timesheet.work_date), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                        <p className="font-medium">
+                          ${((assignment?.hourly_rate || assignment?.fixed_rate || 0) * timesheet.hours).toFixed(2)}
                         </p>
                       </div>
-                      <p className="font-medium">
-                        ${(timesheet.work_type_assignments[0]?.hourly_rate || 
-                           timesheet.work_type_assignments[0]?.fixed_rate || 0).toFixed(2)}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
