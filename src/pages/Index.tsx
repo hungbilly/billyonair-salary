@@ -8,7 +8,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Logo } from "@/components/Logo";
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
@@ -129,7 +128,6 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
-        <Logo />
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-12 w-32 mb-8" />
           <div className="space-y-4">
@@ -144,7 +142,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Logo />
       <div className="container mx-auto py-8">
         {!session ? (
           <div className="flex justify-center items-center min-h-[80vh]">
