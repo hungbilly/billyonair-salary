@@ -7,7 +7,7 @@ export const useWorkTypes = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: workTypes, isLoading, error } = useQuery({
+  const { data: workTypes, isLoading, error } = useQuery<WorkType[]>({
     queryKey: ["workTypes"],
     queryFn: async () => {
       console.log("Fetching work types...");
@@ -36,7 +36,10 @@ export const useWorkTypes = () => {
           throw error;
         }
         console.log("Fetched work types:", data);
-        return data;
+        return (data || []).map(workType => ({
+          ...workType,
+          rate_type: workType.rate_type as 'fixed' | 'hourly'
+        }));
       }
 
       const { data, error } = await supabase
@@ -56,7 +59,10 @@ export const useWorkTypes = () => {
         throw error;
       }
       console.log("Fetched work types:", data);
-      return data;
+      return (data || []).map(workType => ({
+        ...workType,
+        rate_type: workType.rate_type as 'fixed' | 'hourly'
+      }));
     },
   });
 
