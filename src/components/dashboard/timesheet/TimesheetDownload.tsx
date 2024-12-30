@@ -10,7 +10,7 @@ import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { useToast } from "@/components/ui/use-toast";
 import { calculateEntryTotal } from "../utils/timesheetCalculations";
-import { format } from "date-fns";
+import { format as formatDate } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
@@ -63,7 +63,7 @@ export const TimesheetDownload = ({
     if (timesheets.length === 0) return `timesheet.${format}`;
     
     const firstDate = new Date(timesheets[0].work_date);
-    const monthYear = format(firstDate, 'MMMM-yyyy');
+    const monthYear = formatDate(firstDate, 'MMMM-yyyy');
     const sanitizedStaffName = staffName.replace(/[^a-zA-Z0-9]/g, '_');
     
     return `${sanitizedStaffName}_Timesheet_${monthYear}.${format}`;
