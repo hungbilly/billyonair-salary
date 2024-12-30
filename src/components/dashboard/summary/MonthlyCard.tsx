@@ -10,18 +10,18 @@ interface MonthlyCardProps {
 
 export const MonthlyCard = ({ title, amount, date, colorClass = "text-green-600" }: MonthlyCardProps) => {
   return (
-    <Card>
+    <Card className="h-[80px]">
       {title && (
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm">{title}</CardTitle>
         </CardHeader>
       )}
-      <CardContent className={!title ? 'pt-6' : ''}>
-        <p className={`text-2xl font-bold ${colorClass}`}>
+      <CardContent className={!title ? 'pt-4' : 'py-2'}>
+        <p className={`text-lg font-bold ${colorClass}`}>
           ${amount.toFixed(2)}
         </p>
-        <p className="text-sm text-muted-foreground">
-          For {format(date, "MMMM yyyy")}
+        <p className="text-xs text-muted-foreground">
+          {format(date, "yyyy")}
         </p>
       </CardContent>
     </Card>

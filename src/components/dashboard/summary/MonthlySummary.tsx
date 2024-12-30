@@ -113,9 +113,9 @@ export const MonthlySummary = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-32" />
-        <Skeleton className="h-32" />
+      <div className="space-y-2">
+        <Skeleton className="h-20" />
+        <Skeleton className="h-20" />
       </div>
     );
   }
@@ -156,13 +156,13 @@ export const MonthlySummary = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <YearSelector
         years={years}
         selectedYear={selectedYear}
         onYearChange={setSelectedYear}
       />
-      <div className="space-y-8">
+      <div className="space-y-2">
         {Array.from({ length: 12 }, (_, i) => (
           <div key={i}>
             {renderMonthSummary(i)}
