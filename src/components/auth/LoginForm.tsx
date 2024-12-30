@@ -22,7 +22,22 @@ export const LoginForm = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message === "Invalid login credentials") {
+          toast({
+            title: "Login Failed",
+            description: "Incorrect email or password. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
       
       toast({
         title: "Success",
@@ -32,7 +47,7 @@ export const LoginForm = () => {
       console.error("Login error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -54,6 +69,17 @@ export const LoginForm = () => {
       toast({
         title: "Error",
         description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
