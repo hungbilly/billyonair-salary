@@ -50,7 +50,15 @@ export const TimesheetFormFields = ({
       <WorkTypeSelect
         workTypes={workTypes}
         selectedWorkType={selectedWorkType}
-        onWorkTypeChange={onWorkTypeChange}
+        onWorkTypeChange={(value) => {
+          onWorkTypeChange(value);
+          const newSelectedType = workTypes.find(wt => wt.id === value);
+          if (newSelectedType?.name === "Other") {
+            onStartTimeChange("");
+            onEndTimeChange("");
+            onHoursChange("1");
+          }
+        }}
       />
       
       {isOtherWorkType && (
@@ -73,18 +81,22 @@ export const TimesheetFormFields = ({
         />
       </div>
 
-      <TimeInputs
-        startTime={startTime}
-        endTime={endTime}
-        onStartTimeChange={onStartTimeChange}
-        onEndTimeChange={onEndTimeChange}
-      />
-      
-      <JobsHoursInput
-        isFixedRate={isFixedRate}
-        value={hours}
-        onChange={onHoursChange}
-      />
+      {!isOtherWorkType && (
+        <>
+          <TimeInputs
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={onStartTimeChange}
+            onEndTimeChange={onEndTimeChange}
+          />
+          
+          <JobsHoursInput
+            isFixedRate={isFixedRate}
+            value={hours}
+            onChange={onHoursChange}
+          />
+        </>
+      )}
     </div>
   );
 };

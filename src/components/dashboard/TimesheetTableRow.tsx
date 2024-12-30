@@ -57,6 +57,7 @@ export const TimesheetTableRow = ({
   });
 
   const formatTimeRange = () => {
+    if (work_types.name === "Other") return "N/A";
     if (!start_time && !end_time) return "N/A";
     
     const formatTime = (time: string) => {
