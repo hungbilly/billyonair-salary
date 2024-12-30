@@ -12,6 +12,12 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface MonthlyExpense {
   month: string;
@@ -91,60 +97,62 @@ export const ExpenseList = () => {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Expense History</h2>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Receipt</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {monthlyExpenses.map((monthGroup) => (
-              <>
-                <TableRow key={monthGroup.month} className="bg-muted/50">
-                  <TableCell colSpan={2} className="font-medium">
-                    {monthGroup.month}
-                  </TableCell>
-                  <TableCell colSpan={3} className="font-medium">
-                    Total: ${monthGroup.total.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-                {monthGroup.expenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>
-                      {format(new Date(expense.expense_date), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>{expense.description}</TableCell>
-                    <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(expense.status)}>
-                        {expense.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {expense.receipt_path && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            downloadReceipt(expense.receipt_path, expense.description)
-                          }
-                        >
-                          <FileDown className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
+      <Accordion type="single" collapsible className="w-full">
+        {monthlyExpenses.map((monthGroup) => (
+          <AccordionItem value={monthGroup.month} key={monthGroup.month}>
+            <AccordionTrigger className="text-lg font-semibold">
+              <div className="flex justify-between w-full pr-4">
+                <span>{monthGroup.month}</span>
+                <span className="text-green-600">
+                  ${monthGroup.total.toFixed(2)}
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Receipt</TableHead>
                   </TableRow>
-                ))}
-              </>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                </TableHeader>
+                <TableBody>
+                  {monthGroup.expenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell>
+                        {format(new Date(expense.expense_date), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>{expense.description}</TableCell>
+                      <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(expense.status)}>
+                          {expense.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {expense.receipt_path && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              downloadReceipt(expense.receipt_path, expense.description)
+                            }
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
     </div>
   );
 };
