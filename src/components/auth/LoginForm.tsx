@@ -59,25 +59,13 @@ export const LoginForm = () => {
       });
 
       if (error) {
-        console.error("Login error details:", {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        });
+        console.error("Login error:", error);
         
-        if (error.message === "Invalid login credentials") {
-          toast({
-            title: "Login Failed",
-            description: "Username or password is incorrect",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Login Failed",
+          description: "Username or password is incorrect",
+          variant: "destructive",
+        });
         return;
       }
 
