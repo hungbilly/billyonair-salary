@@ -51,7 +51,7 @@ export const ExpenseList = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
-        return "success";
+        return "secondary";
       case "rejected":
         return "destructive";
       default:
