@@ -150,7 +150,6 @@ export const MonthlySummary = () => {
         totalExpenses={totalExpenses}
         netAmount={netAmount}
         date={monthStart}
-        showTitle={month === 0} // Only show titles for January
       />
     );
   };
@@ -162,6 +161,13 @@ export const MonthlySummary = () => {
         selectedYear={selectedYear}
         onYearChange={setSelectedYear}
       />
+      <div className="flex items-center gap-4 pl-24">
+        <div className="flex-1 grid grid-cols-3 gap-2">
+          <div className="text-sm font-medium text-muted-foreground">Total Salary</div>
+          <div className="text-sm font-medium text-muted-foreground">Total Expenses</div>
+          <div className="text-sm font-medium text-muted-foreground">Net Amount</div>
+        </div>
+      </div>
       <div className="space-y-2">
         {Array.from({ length: 12 }, (_, i) => (
           <div key={i}>
