@@ -5,18 +5,18 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface WorkTypeAssignment {
+  work_type_id: string;
   hourly_rate: number | null;
   fixed_rate: number | null;
 }
 
-interface Timesheet {
+interface TimesheetData {
   id: string;
   hours: number;
   work_types: {
     name: string;
     rate_type: 'fixed' | 'hourly';
   };
-  work_type_assignments: WorkTypeAssignment[];
   created_at: string;
   custom_rate: number | null;
   description: string | null;
@@ -26,6 +26,10 @@ interface Timesheet {
   updated_at: string;
   work_date: string;
   work_type_id: string;
+}
+
+interface Timesheet extends TimesheetData {
+  work_type_assignments: WorkTypeAssignment[];
 }
 
 export const MonthlySummary = () => {
@@ -63,15 +67,15 @@ export const MonthlySummary = () => {
 
       if (error) throw error;
 
-      // Combine the data
-      const timesheetsWithRates = data.map(timesheet => ({
+      // Combine the data with proper typing
+      const timesheetsWithRates: Timesheet[] = (data as TimesheetData[]).map(timesheet => ({
         ...timesheet,
         work_type_assignments: assignments.filter(
           assignment => assignment.work_type_id === timesheet.work_type_id
         )
       }));
 
-      return timesheetsWithRates as Timesheet[];
+      return timesheetsWithRates;
     }
   });
 
