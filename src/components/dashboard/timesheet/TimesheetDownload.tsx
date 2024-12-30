@@ -58,8 +58,8 @@ export const TimesheetDownload = ({
     });
 
     // Add monthly total row
-    const monthTotal = Number(timesheets.reduce((total, timesheet) => 
-      Number(total) + Number(calculateEntryTotal(timesheet, workTypeRates)), 0));
+    const monthTotal = timesheets.reduce((total, timesheet) => 
+      Number(total) + Number(calculateEntryTotal(timesheet, workTypeRates)), 0);
 
     data.push({
       'Date': '',
