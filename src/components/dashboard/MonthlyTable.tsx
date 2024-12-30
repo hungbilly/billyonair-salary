@@ -24,6 +24,7 @@ interface Timesheet {
     rate_type: 'fixed' | 'hourly';
   };
   work_type_id: string;
+  custom_rate?: number | null;
 }
 
 interface MonthlyTableProps {
@@ -91,9 +92,23 @@ export const MonthlyTable = ({
       hours: timesheet.hours,
       rateType: timesheet.work_types.rate_type,
       workTypes: timesheet.work_types,
-      availableRates: rates
+      availableRates: rates,
+      custom_rate: timesheet.custom_rate
     });
 
+    // Handle "Other" work type with custom rate
+    if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
+      const entryTotal = timesheet.custom_rate * timesheet.hours;
+      console.log('MonthlyTable - Custom rate calculation:', {
+        custom_rate: timesheet.custom_rate,
+        hours: timesheet.hours,
+        entryTotal,
+        runningTotal: total + entryTotal
+      });
+      return total + entryTotal;
+    }
+
+    // Handle regular work types
     const rate = timesheet.work_types.rate_type === 'fixed' 
       ? rates?.fixed_rate 
       : rates?.hourly_rate;
@@ -133,7 +148,8 @@ export const MonthlyTable = ({
             console.log('MonthlyTable - Rendering row:', {
               id: timesheet.id,
               workType: timesheet.work_types,
-              rateType: timesheet.work_types.rate_type
+              rateType: timesheet.work_types.rate_type,
+              custom_rate: timesheet.custom_rate
             });
             
             return (
