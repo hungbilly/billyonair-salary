@@ -6,13 +6,63 @@ import { ProfileManagement } from "./profile/ProfileManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 export const StaffDashboard = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
+  const [workTypeRates, setWorkTypeRates] = useState<Record<string, { hourly_rate?: number; fixed_rate?: number; }>>({});
+
+  // Fetch work types for the current user
+  const { data: workTypes = [] } = useQuery({
+    queryKey: ["workTypes"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("work_types")
+        .select(`
+          *,
+          work_type_assignments!inner (
+            hourly_rate,
+            fixed_rate
+          )
+        `)
+        .eq("work_type_assignments.staff_id", user.id);
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch timesheets for the current user
+  const { data: timesheets = [], refetch: refetchTimesheets } = useQuery({
+    queryKey: ["timesheets"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("timesheets")
+        .select(`
+          *,
+          work_types (
+            name,
+            rate_type
+          )
+        `)
+        .eq("employee_id", user.id)
+        .order("work_date", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   useEffect(() => {
     fetchCurrentUser();
+    fetchWorkTypeRates();
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -37,6 +87,40 @@ export const StaffDashboard = () => {
     }
   };
 
+  const fetchWorkTypeRates = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('work_type_assignments')
+        .select('work_type_id, hourly_rate, fixed_rate')
+        .eq('staff_id', user.id);
+
+      if (error) throw error;
+
+      const ratesMap = data.reduce((acc: Record<string, { hourly_rate?: number; fixed_rate?: number; }>, curr) => {
+        acc[curr.work_type_id] = {
+          hourly_rate: curr.hourly_rate,
+          fixed_rate: curr.fixed_rate,
+        };
+        return acc;
+      }, {});
+
+      setWorkTypeRates(ratesMap);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch work type rates",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTimesheetUpdate = () => {
+    refetchTimesheets();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -52,8 +136,15 @@ export const StaffDashboard = () => {
         </TabsList>
         <TabsContent value="timesheets">
           <div className="space-y-6">
-            <TimesheetForm />
-            <MonthlySubmissions />
+            <TimesheetForm 
+              workTypes={workTypes} 
+              onTimesheetAdded={handleTimesheetUpdate}
+            />
+            <MonthlySubmissions 
+              timesheets={timesheets}
+              workTypeRates={workTypeRates}
+              onTimesheetUpdated={handleTimesheetUpdate}
+            />
           </div>
         </TabsContent>
         <TabsContent value="expenses">
