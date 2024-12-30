@@ -120,7 +120,7 @@ export const TimesheetDownload = ({
       const csvOptions = {
         bookType: 'csv' as const,
         bookSST: false,
-        type: 'binary'
+        type: 'binary' as const
       };
       XLSX.writeFile(wb, 'timesheet.csv', csvOptions);
     }
