@@ -71,7 +71,7 @@ export const TimesheetDownload = ({
     const monthTotal = timesheets.reduce((total: number, timesheet) =>
       total + calculateEntryTotal(timesheet, workTypeRates), 0);
 
-    // Create workbook and worksheet
+    // Create workbook and worksheet with numeric data
     const ws = XLSX.utils.json_to_sheet(data);
 
     // Add the monthly total row after the worksheet is created
@@ -81,8 +81,8 @@ export const TimesheetDownload = ({
       'Time': '',
       'Work Type': '',
       'Hours/Jobs': null,
-      'Rate': null,
-      'Entry Total': monthTotal
+      'Rate': 'Monthly Total',
+      'Entry Total': Number(monthTotal)
     }], { skipHeader: true, origin: totalRowIndex });
 
     // Format the Rate and Entry Total columns
