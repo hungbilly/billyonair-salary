@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export const CreateWorkTypeDialog = () => {
   const [workTypeName, setWorkTypeName] = useState("");
+  const [description, setDescription] = useState("");
   const [rateType, setRateType] = useState<"hourly" | "fixed">("hourly");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -25,6 +27,7 @@ export const CreateWorkTypeDialog = () => {
           name: workTypeName,
           rate_type: rateType,
           created_by: userData.user.id,
+          description: description || null,
         })
         .select();
 
@@ -36,6 +39,7 @@ export const CreateWorkTypeDialog = () => {
       });
 
       setWorkTypeName("");
+      setDescription("");
       setRateType("hourly");
       setIsDialogOpen(false);
     } catch (error: any) {
@@ -66,6 +70,16 @@ export const CreateWorkTypeDialog = () => {
               value={workTypeName}
               onChange={(e) => setWorkTypeName(e.target.value)}
               placeholder="Enter work type name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter work type description"
+              rows={3}
             />
           </div>
           <div className="space-y-2">

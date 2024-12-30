@@ -3,6 +3,7 @@ export interface WorkType {
   name: string;
   rate_type: string;
   created_at: string;
+  description?: string | null;
 }
 
 export interface WorkTypeSummary {

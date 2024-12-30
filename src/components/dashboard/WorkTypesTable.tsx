@@ -16,6 +16,7 @@ export const WorkTypesTable = ({ workTypes, onEdit, onDelete, onWorkTypeUpdated 
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
+          <TableHead>Description</TableHead>
           <TableHead>Rate Type</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
@@ -24,6 +25,7 @@ export const WorkTypesTable = ({ workTypes, onEdit, onDelete, onWorkTypeUpdated 
         {workTypes.map((workType) => (
           <TableRow key={workType.id}>
             <TableCell>{workType.name}</TableCell>
+            <TableCell className="max-w-xs truncate">{workType.description || "-"}</TableCell>
             <TableCell className="capitalize">{workType.rate_type}</TableCell>
             <TableCell>
               <div className="flex gap-2">
