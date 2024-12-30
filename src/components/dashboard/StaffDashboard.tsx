@@ -141,7 +141,7 @@ export const StaffDashboard = () => {
           />
         </TabsContent>
         <TabsContent value="expenses" className="space-y-6">
-          <ExpenseForm onExpenseAdded={handleExpenseAdded} />
+          <ExpenseForm onSubmit={handleExpenseAdded} />
           <ExpenseList />
         </TabsContent>
       </Tabs>
