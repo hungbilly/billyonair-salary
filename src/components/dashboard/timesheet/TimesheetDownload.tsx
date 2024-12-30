@@ -38,10 +38,10 @@ export const TimesheetDownload = ({
     const data = timesheets.map(timesheet => {
       const entryTotal = calculateEntryTotal(timesheet, workTypeRates);
       const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate 
-        ? timesheet.custom_rate 
+        ? Number(timesheet.custom_rate) 
         : (timesheet.work_types.rate_type === 'fixed' 
-          ? workTypeRates[timesheet.work_type_id]?.fixed_rate 
-          : workTypeRates[timesheet.work_type_id]?.hourly_rate);
+          ? Number(workTypeRates[timesheet.work_type_id]?.fixed_rate || 0) 
+          : Number(workTypeRates[timesheet.work_type_id]?.hourly_rate || 0));
 
       return {
         'Date': new Date(timesheet.work_date).toLocaleDateString(),
@@ -52,7 +52,7 @@ export const TimesheetDownload = ({
           ? `Other: ${timesheet.description}`
           : timesheet.work_types.name,
         'Hours/Jobs': timesheet.hours,
-        'Rate': `$${rate?.toFixed(2)}${timesheet.work_types.rate_type === 'hourly' ? '/hr' : ''}`,
+        'Rate': `$${rate.toFixed(2)}${timesheet.work_types.rate_type === 'hourly' ? '/hr' : ''}`,
         'Entry Total': `$${entryTotal.toFixed(2)}`
       };
     });
