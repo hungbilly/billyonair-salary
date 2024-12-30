@@ -9,6 +9,8 @@ import { CreateUserDialog } from "./CreateUserDialog";
 import { UserManagement } from "./UserManagement";
 import { WorkTypesList } from "./WorkTypesList";
 import { StaffList } from "./StaffList";
+import { StaffSalaryReport } from "./StaffSalaryReport";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -84,12 +86,22 @@ export const AdminDashboard = () => {
         activeStaffCount={users.filter((user) => user.role === "staff").length}
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <StaffList users={users} />
-        <WorkTypesList />
-      </div>
-
-      <UserManagement users={users} onUserUpdated={fetchUsers} />
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="salary-report">Salary Report</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <div className="grid gap-6 md:grid-cols-2">
+            <StaffList users={users} />
+            <WorkTypesList />
+          </div>
+          <UserManagement users={users} onUserUpdated={fetchUsers} />
+        </TabsContent>
+        <TabsContent value="salary-report">
+          <StaffSalaryReport />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
