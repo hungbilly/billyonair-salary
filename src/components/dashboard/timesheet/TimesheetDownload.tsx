@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import { useToast } from "@/components/ui/use-toast";
 import { calculateEntryTotal } from "../utils/timesheetCalculations";
 
@@ -45,8 +46,7 @@ export const TimesheetDownload = ({
   const { toast } = useToast();
 
   const downloadTableData = (format: 'csv' | 'xlsx') => {
-    // Create initial data with numeric values
-    const data: TimesheetRow[] = timesheets.map(timesheet => {
+    const data = timesheets.map(timesheet => {
       const entryTotal = calculateEntryTotal(timesheet, workTypeRates);
       const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate
         ? timesheet.custom_rate
@@ -63,66 +63,77 @@ export const TimesheetDownload = ({
           ? `Other: ${timesheet.description}`
           : timesheet.work_types.name,
         'Hours/Jobs': Number(timesheet.hours),
-        'Rate': Number(rate),
-        'Entry Total': Number(entryTotal)
+        'Rate': rate,
+        'Entry Total': entryTotal
       };
     });
 
     const monthTotal = timesheets.reduce((total: number, timesheet) =>
       total + calculateEntryTotal(timesheet, workTypeRates), 0);
 
-    // Create workbook and worksheet with numeric data
-    const ws = XLSX.utils.json_to_sheet(data);
+    if (format === 'csv') {
+      const formattedData = data.map(row => ({
+        ...row,
+        'Rate': typeof row.Rate === 'number' ? `$${row.Rate.toFixed(2)}${typeof row['Hours/Jobs'] === 'number' && row['Hours/Jobs'] > 0 ? (row['Work Type'] !== "Other" && timesheets.find(t => t.work_types.name === row['Work Type'])?.work_types.rate_type === 'hourly' ? '/hr' : '') : ''}` : row.Rate,
+        'Entry Total': typeof row['Entry Total'] === 'number' ? row['Entry Total'].toFixed(2) : row['Entry Total'],
+      }));
 
-    // Add the monthly total row after the worksheet is created
-    const totalRowIndex = data.length + 1;
-    XLSX.utils.sheet_add_json(ws, [{
-      'Date': '',
-      'Time': '',
-      'Work Type': '',
-      'Hours/Jobs': null,
-      'Rate': 'Monthly Total',
-      'Entry Total': Number(monthTotal)
-    }], { skipHeader: true, origin: totalRowIndex });
+      formattedData.push({
+        'Date': '',
+        'Time': '',
+        'Work Type': '',
+        'Hours/Jobs': null,
+        'Rate': 'Monthly Total',
+        'Entry Total': monthTotal.toFixed(2)
+      });
 
-    // Format the Rate and Entry Total columns
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for (let R = range.s.r; R <= range.e.r; R++) {
-      const rateCell = ws[XLSX.utils.encode_cell({ r: R, c: 4 })];
-      const totalCell = ws[XLSX.utils.encode_cell({ r: R, c: 5 })];
-      
-      if (rateCell) {
-        if (R === range.e.r) {
-          rateCell.v = 'Monthly Total';
-          rateCell.t = 's';
-        } else if (typeof rateCell.v === 'number') {
-          rateCell.z = '"$"#,##0.00';
-          const currentTimesheet = timesheets[R];
-          if (currentTimesheet && currentTimesheet.work_types.rate_type === 'hourly') {
-            rateCell.z += '"/hr"';
+      const csvContent = Papa.unparse(formattedData);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'timesheet.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } else {
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      const totalRowIndex = data.length + 1;
+      XLSX.utils.sheet_add_json(ws, [{
+        'Date': '',
+        'Time': '',
+        'Work Type': '',
+        'Hours/Jobs': null,
+        'Rate': 'Monthly Total',
+        'Entry Total': Number(monthTotal)
+      }], { skipHeader: true, origin: totalRowIndex });
+
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        const rateCell = ws[XLSX.utils.encode_cell({ r: R, c: 4 })];
+        const totalCell = ws[XLSX.utils.encode_cell({ r: R, c: 5 })];
+        
+        if (rateCell) {
+          if (R === range.e.r) {
+            rateCell.v = 'Monthly Total';
+            rateCell.t = 's';
+          } else if (typeof rateCell.v === 'number') {
+            rateCell.z = '"$"#,##0.00';
+            const currentTimesheet = timesheets[R];
+            if (currentTimesheet && currentTimesheet.work_types.rate_type === 'hourly') {
+              rateCell.z += '"/hr"';
+            }
           }
+        }
+
+        if (totalCell && typeof totalCell.v === 'number') {
+          totalCell.z = '"$"#,##0.00';
         }
       }
 
-      if (totalCell && typeof totalCell.v === 'number') {
-        totalCell.z = '"$"#,##0.00';
-      }
-    }
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Timesheet');
-
-    // Download file with appropriate format
-    if (format === 'xlsx') {
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Timesheet');
       XLSX.writeFile(wb, 'timesheet.xlsx');
-    } else {
-      // For CSV, use simpler options that are supported by the types
-      const csvOptions = {
-        bookType: 'csv' as const,
-        bookSST: false,
-        type: 'binary' as const
-      };
-      XLSX.writeFile(wb, 'timesheet.csv', csvOptions);
     }
 
     toast({
