@@ -143,6 +143,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-8">
+        <h1 className="text-4xl font-bold text-center mb-8 text-primary">Billy ONAIR</h1>
         {!session ? (
           <div className="flex justify-center items-center min-h-[80vh]">
             <LoginForm />
