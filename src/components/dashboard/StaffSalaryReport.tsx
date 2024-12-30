@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import { SalaryReportHeader } from "./salary-report/SalaryReportHeader";
+import { TimesheetHistory } from "./salary-report/TimesheetHistory";
+import { ExpenseHistory } from "./salary-report/ExpenseHistory";
 
 interface WorkTypeAssignment {
   hourly_rate: number | null;
@@ -45,7 +46,7 @@ export const StaffSalaryReport = () => {
     },
   });
 
-  const { data: salaryData } = useQuery({
+  const { data: salaryData, refetch } = useQuery({
     queryKey: ["staff-salary", selectedStaffId],
     queryFn: async () => {
       if (!selectedStaffId) return null;
@@ -107,6 +108,17 @@ export const StaffSalaryReport = () => {
     return salaryData.expenses.reduce((total, expense) => total + expense.amount, 0);
   };
 
+  const workTypeRates = salaryData?.timesheets.reduce((acc: Record<string, any>, timesheet) => {
+    const assignments = timesheet.work_types.work_type_assignments;
+    if (assignments && assignments.length > 0) {
+      acc[timesheet.work_type_id] = {
+        hourly_rate: assignments[0].hourly_rate,
+        fixed_rate: assignments[0].fixed_rate,
+      };
+    }
+    return acc;
+  }, {}) || {};
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -126,91 +138,23 @@ export const StaffSalaryReport = () => {
       </div>
 
       {selectedStaffId && salaryData && (
-        <div className="grid gap-6">
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Salary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-green-600">
-                  ${calculateTotalSalary().toFixed(2)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Expenses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-blue-600">
-                  ${calculateTotalExpenses().toFixed(2)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Net Amount</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className={`text-2xl font-bold ${
-                  calculateTotalSalary() - calculateTotalExpenses() >= 0 
-                    ? 'text-green-600' 
-                    : 'text-red-600'
-                }`}>
-                  ${(calculateTotalSalary() - calculateTotalExpenses()).toFixed(2)}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Timesheets</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {salaryData.timesheets.slice(0, 5).map((timesheet) => {
-                    const assignment = timesheet.work_types.work_type_assignments[0];
-                    return (
-                      <div key={timesheet.id} className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{timesheet.work_types.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(timesheet.work_date), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        <p className="font-medium">
-                          ${((assignment?.hourly_rate || assignment?.fixed_rate || 0) * timesheet.hours).toFixed(2)}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Expenses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {salaryData.expenses.slice(0, 5).map((expense) => (
-                    <div key={expense.id} className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{expense.description}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(expense.expense_date), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                      <p className="font-medium">${expense.amount.toFixed(2)}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+        <div className="space-y-6">
+          <SalaryReportHeader 
+            totalSalary={calculateTotalSalary()}
+            totalExpenses={calculateTotalExpenses()}
+          />
+          
+          <div className="grid gap-6">
+            <TimesheetHistory 
+              timesheets={salaryData.timesheets}
+              workTypeRates={workTypeRates}
+              onTimesheetUpdated={refetch}
+            />
+            
+            <ExpenseHistory 
+              expenses={salaryData.expenses}
+              onExpenseUpdated={refetch}
+            />
           </div>
         </div>
       )}
