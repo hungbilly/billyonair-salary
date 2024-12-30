@@ -23,6 +23,7 @@ interface TimesheetTableRowProps {
   };
   rateType: 'fixed' | 'hourly';
   custom_rate?: number | null;
+  description?: string | null;
   onDelete: () => void;
   onEdit: (timesheet: any) => void;
 }
@@ -38,6 +39,7 @@ export const TimesheetTableRow = ({
   rate,
   rateType,
   custom_rate,
+  description,
   onDelete,
   onEdit
 }: TimesheetTableRowProps) => {
@@ -50,6 +52,7 @@ export const TimesheetTableRow = ({
     rateType,
     rate,
     custom_rate,
+    description,
     hours
   });
 
@@ -114,6 +117,13 @@ export const TimesheetTableRow = ({
     }
   };
 
+  const formatWorkTypeName = () => {
+    if (work_types.name === "Other" && description) {
+      return `Other: ${description}`;
+    }
+    return work_types.name;
+  };
+
   const entryTotal = calculateEntryTotal();
 
   return (
@@ -121,7 +131,7 @@ export const TimesheetTableRow = ({
       <TableRow>
         <TableCell>{format(new Date(work_date), 'MMM d, yyyy')}</TableCell>
         <TableCell>{formatTimeRange()}</TableCell>
-        <TableCell>{work_types.name}</TableCell>
+        <TableCell>{formatWorkTypeName()}</TableCell>
         <TableCell className="text-right">{hours}</TableCell>
         <TableCell className="text-right">
           ${work_types.name === "Other" && custom_rate 
@@ -144,7 +154,8 @@ export const TimesheetTableRow = ({
                   end_time,
                   work_types,
                   work_type_id,
-                  custom_rate
+                  custom_rate,
+                  description
                 });
               }}
             >
