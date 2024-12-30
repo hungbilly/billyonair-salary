@@ -26,12 +26,12 @@ export const useStaffSalaryData = (selectedStaffId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, email")
         .eq("id", user?.id)
         .single();
       
-      console.log("Current user role:", profile?.role);
-      console.log("Fetching timesheets for employee:", selectedStaffId);
+      console.log("User profile data:", profile);
+      console.log("Setting user role to:", profile?.role);
 
       // Then fetch timesheets with work types
       const { data: timesheets, error: timesheetsError } = await supabase
@@ -51,7 +51,8 @@ export const useStaffSalaryData = (selectedStaffId: string) => {
             rate_type
           )
         `)
-        .eq("employee_id", selectedStaffId);
+        .eq("employee_id", selectedStaffId)
+        .order('work_date', { ascending: false });
 
       if (timesheetsError) {
         console.error("Error fetching timesheets:", timesheetsError);
@@ -74,6 +75,7 @@ export const useStaffSalaryData = (selectedStaffId: string) => {
 
       console.log("Timesheets with rates:", timesheetsWithRates);
 
+      // Fetch expenses
       const { data: expenses, error: expensesError } = await supabase
         .from("expenses")
         .select("*")
