@@ -7,14 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { WorkType, Timesheet, WorkTypeRates } from "./types";
 
 export const StaffDashboard = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
-  const [workTypeRates, setWorkTypeRates] = useState<Record<string, { hourly_rate?: number; fixed_rate?: number; }>>({});
+  const [workTypeRates, setWorkTypeRates] = useState<WorkTypeRates>({});
 
   // Fetch work types for the current user
-  const { data: workTypes = [] } = useQuery({
+  const { data: workTypes = [] } = useQuery<WorkType[]>({
     queryKey: ["workTypes"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -32,12 +33,15 @@ export const StaffDashboard = () => {
         .eq("work_type_assignments.staff_id", user.id);
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(workType => ({
+        ...workType,
+        rate_type: workType.rate_type as 'fixed' | 'hourly'
+      }));
     }
   });
 
   // Fetch timesheets for the current user
-  const { data: timesheets = [], refetch: refetchTimesheets } = useQuery({
+  const { data: timesheets = [], refetch: refetchTimesheets } = useQuery<Timesheet[]>({
     queryKey: ["timesheets"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -56,7 +60,13 @@ export const StaffDashboard = () => {
         .order("work_date", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(timesheet => ({
+        ...timesheet,
+        work_types: {
+          ...timesheet.work_types,
+          rate_type: timesheet.work_types.rate_type as 'fixed' | 'hourly'
+        }
+      }));
     }
   });
 
@@ -99,7 +109,7 @@ export const StaffDashboard = () => {
 
       if (error) throw error;
 
-      const ratesMap = data.reduce((acc: Record<string, { hourly_rate?: number; fixed_rate?: number; }>, curr) => {
+      const ratesMap = data.reduce((acc: WorkTypeRates, curr) => {
         acc[curr.work_type_id] = {
           hourly_rate: curr.hourly_rate,
           fixed_rate: curr.fixed_rate,
