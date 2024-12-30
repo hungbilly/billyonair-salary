@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
-import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { WorkTypeSelect } from "./WorkTypeSelect";
-import { TimeInputs } from "./TimeInputs";
-import { JobsHoursInput } from "./JobsHoursInput";
+import { useToast } from "@/hooks/use-toast";
+import { TimesheetFormFields } from "./timesheet/TimesheetFormFields";
+import { format } from "date-fns";
 
 interface TimesheetFormProps {
   workTypes: any[];
@@ -33,6 +29,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
   const [endTime, setEndTime] = useState(editingTimesheet?.end_time || "");
   const [isFixedRate, setIsFixedRate] = useState(false);
   const [salary, setSalary] = useState<number | null>(null);
+  const [description, setDescription] = useState("");
+  const [rate, setRate] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,6 +38,14 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
       if (!selectedWorkType) {
         setIsFixedRate(false);
         setSalary(null);
+        return;
+      }
+
+      const selectedWorkTypeData = workTypes.find(wt => wt.id === selectedWorkType);
+      if (selectedWorkTypeData?.name === "Other") {
+        const rateValue = parseFloat(rate) || 0;
+        const hoursValue = parseFloat(hours) || 0;
+        setSalary(rateValue * hoursValue);
         return;
       }
 
@@ -77,41 +83,46 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
     };
 
     fetchWorkTypeRateType();
-  }, [selectedWorkType, hours]);
-
-  const validateInput = () => {
-    if (!date || !selectedWorkType || !startTime || !endTime) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    const hoursValue = parseFloat(hours);
-    if (isNaN(hoursValue) || hoursValue <= 0) {
-      toast({
-        title: "Error",
-        description: isFixedRate 
-          ? "Number of jobs must be greater than 0" 
-          : "Hours must be greater than 0",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
+  }, [selectedWorkType, hours, rate]);
 
   const handleSubmit = async () => {
     try {
-      if (!validateInput()) return;
-
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("No user found");
 
+      const selectedWorkTypeData = workTypes.find(wt => wt.id === selectedWorkType);
+      const isOtherWorkType = selectedWorkTypeData?.name === "Other";
+
+      if (isOtherWorkType && (!description || !rate)) {
+        toast({
+          title: "Error",
+          description: "Please fill in both description and rate for Other work type",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!date || !selectedWorkType || !startTime || !endTime || !hours) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const hoursValue = parseFloat(hours);
+      if (isNaN(hoursValue) || hoursValue <= 0) {
+        toast({
+          title: "Error",
+          description: isFixedRate 
+            ? "Number of jobs must be greater than 0" 
+            : "Hours must be greater than 0",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const timesheetData = {
         employee_id: userData.user.id,
         work_type_id: selectedWorkType,
@@ -119,6 +130,10 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
         work_date: format(date, "yyyy-MM-dd"),
         start_time: startTime,
         end_time: endTime,
+        ...(isOtherWorkType && {
+          description,
+          custom_rate: parseFloat(rate),
+        }),
       };
 
       if (editingTimesheet) {
@@ -152,6 +167,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
       setStartTime("");
       setEndTime("");
       setSalary(null);
+      setDescription("");
+      setRate("");
       onTimesheetAdded();
     } catch (error: any) {
       console.error("Error logging hours:", error);
@@ -170,33 +187,23 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
       </CardHeader>
       <CardContent>
         <div className="grid gap-4">
-          <WorkTypeSelect
+          <TimesheetFormFields
             workTypes={workTypes}
             selectedWorkType={selectedWorkType}
-            onWorkTypeChange={setSelectedWorkType}
-          />
-          
-          <div className="grid gap-2">
-            <Label>Date</Label>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-            />
-          </div>
-
-          <TimeInputs
+            date={date}
             startTime={startTime}
             endTime={endTime}
+            hours={hours}
+            isFixedRate={isFixedRate}
+            description={description}
+            rate={rate}
+            onWorkTypeChange={setSelectedWorkType}
+            onDateChange={setDate}
             onStartTimeChange={setStartTime}
             onEndTimeChange={setEndTime}
-          />
-          
-          <JobsHoursInput
-            isFixedRate={isFixedRate}
-            value={hours}
-            onChange={setHours}
+            onHoursChange={setHours}
+            onDescriptionChange={setDescription}
+            onRateChange={setRate}
           />
 
           {salary !== null && (
