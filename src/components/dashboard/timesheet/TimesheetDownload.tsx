@@ -116,12 +116,11 @@ export const TimesheetDownload = ({
     if (format === 'xlsx') {
       XLSX.writeFile(wb, 'timesheet.xlsx');
     } else {
-      // For CSV, ensure proper number formatting
+      // For CSV, use simpler options that are supported by the types
       const csvOptions = {
         bookType: 'csv' as const,
-        numbers: XLSX.NumberFormat.GENERAL_NUMBER,
-        cellDates: false,
-        strip: false,
+        bookSST: false,
+        type: 'binary'
       };
       XLSX.writeFile(wb, 'timesheet.csv', csvOptions);
     }
