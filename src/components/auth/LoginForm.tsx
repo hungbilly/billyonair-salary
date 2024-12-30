@@ -88,48 +88,6 @@ export const LoginForm = () => {
     }
   };
 
-  const handleSignUp = async () => {
-    if (!validateInputs()) return;
-
-    setLoading(true);
-    
-    try {
-      console.log("Attempting signup with email:", email);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
-
-      if (error) {
-        console.error("Signup error:", error);
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log("Signup successful, user data:", data);
-      toast({
-        title: "Success",
-        description: "Please check your email to confirm your account",
-      });
-    } catch (error: any) {
-      console.error("Unexpected signup error:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Card className="w-[350px]">
       <CardHeader>
@@ -163,9 +121,6 @@ export const LoginForm = () => {
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Loading..." : "Login"}
-          </Button>
-          <Button type="button" variant="outline" onClick={handleSignUp} disabled={loading}>
-            Sign Up
           </Button>
         </form>
       </CardContent>
