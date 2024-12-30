@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
-import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 import { DeleteTimesheetDialog } from "./timesheet/DeleteTimesheetDialog";
 import { useState } from "react";
 
@@ -85,7 +85,6 @@ export const TimesheetTableRow = ({
       custom_rate
     });
 
-    // For "Other" work type, use custom rate if available
     if (work_types.name === "Other" && custom_rate) {
       const total = custom_rate * hours;
       console.log('Custom rate calculation:', {
@@ -151,25 +150,25 @@ export const TimesheetTableRow = ({
             >
               <Edit className="h-4 w-4" />
             </Button>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </TableCell>
       </TableRow>
 
-      <DeleteTimesheetDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirmDelete={onDelete}
-        timesheetId={id}
-      />
+      {showDeleteDialog && (
+        <DeleteTimesheetDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirmDelete={onDelete}
+          timesheetId={id}
+        />
+      )}
     </>
   );
 };
