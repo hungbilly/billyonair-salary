@@ -9,29 +9,20 @@ export const useStaffSalaryData = (selectedStaffId: string) => {
 
       console.log("Fetching salary data for staff:", selectedStaffId);
 
-      // First, get the work type assignments for this staff member
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from("work_type_assignments")
-        .select("work_type_id, hourly_rate, fixed_rate")
-        .eq("staff_id", selectedStaffId);
-
-      if (assignmentsError) {
-        console.error("Error fetching assignments:", assignmentsError);
-        throw assignmentsError;
-      }
-
-      console.log("Staff work type assignments:", assignments);
-
-      // Debug: Log the user's role and ID
+      // First, get the current user's role
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
+      const { data: currentUserProfile, error: profileError } = await supabase
         .from("profiles")
         .select("role, email")
         .eq("id", user?.id)
         .single();
       
-      console.log("User profile data:", profile);
-      console.log("Setting user role to:", profile?.role);
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+        throw profileError;
+      }
+
+      console.log("Current user role:", currentUserProfile?.role);
 
       // Then fetch timesheets with work types
       const { data: timesheets, error: timesheetsError } = await supabase
@@ -59,6 +50,19 @@ export const useStaffSalaryData = (selectedStaffId: string) => {
       }
 
       console.log("Raw timesheets data:", timesheets);
+
+      // Get work type assignments for rates
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from("work_type_assignments")
+        .select("work_type_id, hourly_rate, fixed_rate")
+        .eq("staff_id", selectedStaffId);
+
+      if (assignmentsError) {
+        console.error("Error fetching assignments:", assignmentsError);
+        throw assignmentsError;
+      }
+
+      console.log("Staff work type assignments:", assignments);
 
       // Combine timesheets with their assignments
       const timesheetsWithRates = timesheets?.map((timesheet: any) => ({
