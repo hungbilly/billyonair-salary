@@ -93,16 +93,28 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
       const selectedWorkTypeData = workTypes.find(wt => wt.id === selectedWorkType);
       const isOtherWorkType = selectedWorkTypeData?.name === "Other";
 
-      if (isOtherWorkType && (!description || !rate)) {
-        toast({
-          title: "Error",
-          description: "Please fill in both description and rate for Other work type",
-          variant: "destructive",
-        });
-        return;
+      // Validate required fields based on work type
+      if (isOtherWorkType) {
+        if (!description || !rate) {
+          toast({
+            title: "Error",
+            description: "Please fill in both description and rate for Other work type",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else {
+        if (!startTime || !endTime) {
+          toast({
+            title: "Error",
+            description: "Please fill in start time and end time",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
-      if (!date || !selectedWorkType || !startTime || !endTime || !hours) {
+      if (!date || !selectedWorkType) {
         toast({
           title: "Error",
           description: "Please fill in all required fields",
@@ -111,8 +123,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
         return;
       }
 
-      const hoursValue = parseFloat(hours);
-      if (isNaN(hoursValue) || hoursValue <= 0) {
+      const hoursValue = isOtherWorkType ? 1 : parseFloat(hours);
+      if (!isOtherWorkType && (isNaN(hoursValue) || hoursValue <= 0)) {
         toast({
           title: "Error",
           description: isFixedRate 
@@ -128,8 +140,8 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
         work_type_id: selectedWorkType,
         hours: hoursValue,
         work_date: format(date, "yyyy-MM-dd"),
-        start_time: startTime,
-        end_time: endTime,
+        start_time: isOtherWorkType ? null : startTime,
+        end_time: isOtherWorkType ? null : endTime,
         ...(isOtherWorkType && {
           description,
           custom_rate: parseFloat(rate),
