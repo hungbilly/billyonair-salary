@@ -10,6 +10,9 @@ import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { useToast } from "@/components/ui/use-toast";
 import { calculateEntryTotal } from "../utils/timesheetCalculations";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 interface Timesheet {
   work_date: string;
@@ -30,20 +33,41 @@ interface TimesheetDownloadProps {
   workTypeRates: Record<string, { hourly_rate?: number; fixed_rate?: number; }>;
 }
 
-interface TimesheetRow {
-  'Date': string;
-  'Time': string;
-  'Work Type': string;
-  'Hours/Jobs': number;
-  'Rate': number;
-  'Entry Total': number;
-}
-
 export const TimesheetDownload = ({ 
   timesheets,
   workTypeRates 
 }: TimesheetDownloadProps) => {
   const { toast } = useToast();
+  const [staffName, setStaffName] = useState<string>("");
+
+  useEffect(() => {
+    const fetchStaffName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (data) {
+          setStaffName(data.full_name || 'Staff');
+        }
+      }
+    };
+
+    fetchStaffName();
+  }, []);
+
+  const getFileName = (format: string) => {
+    if (timesheets.length === 0) return `timesheet.${format}`;
+    
+    const firstDate = new Date(timesheets[0].work_date);
+    const monthYear = format(firstDate, 'MMMM-yyyy');
+    const sanitizedStaffName = staffName.replace(/[^a-zA-Z0-9]/g, '_');
+    
+    return `${sanitizedStaffName}_Timesheet_${monthYear}.${format}`;
+  };
 
   const downloadTableData = (format: 'csv' | 'xlsx') => {
     const data = timesheets.map(timesheet => {
@@ -92,7 +116,7 @@ export const TimesheetDownload = ({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'timesheet.csv';
+      link.download = getFileName('csv');
       link.click();
       window.URL.revokeObjectURL(url);
     } else {
@@ -133,7 +157,7 @@ export const TimesheetDownload = ({
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Timesheet');
-      XLSX.writeFile(wb, 'timesheet.xlsx');
+      XLSX.writeFile(wb, getFileName('xlsx'));
     }
 
     toast({
