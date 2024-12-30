@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
 
 interface MonthlyCardProps {
   title: string;
@@ -19,9 +18,6 @@ export const MonthlyCard = ({ title, amount, date, colorClass = "text-green-600"
       <CardContent className={!title ? 'pt-4' : 'py-2'}>
         <p className={`text-lg font-bold ${colorClass}`}>
           ${amount.toFixed(2)}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {format(date, "yyyy")}
         </p>
       </CardContent>
     </Card>
