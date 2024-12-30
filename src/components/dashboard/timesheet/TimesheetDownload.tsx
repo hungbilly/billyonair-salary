@@ -112,11 +112,18 @@ export const TimesheetDownload = ({
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Timesheet');
 
-    // Download file
+    // Download file with appropriate format
     if (format === 'xlsx') {
       XLSX.writeFile(wb, 'timesheet.xlsx');
     } else {
-      XLSX.writeFile(wb, 'timesheet.csv');
+      // For CSV, ensure proper number formatting
+      const csvOptions = {
+        bookType: 'csv' as const,
+        numbers: XLSX.NumberFormat.GENERAL_NUMBER,
+        cellDates: false,
+        strip: false,
+      };
+      XLSX.writeFile(wb, 'timesheet.csv', csvOptions);
     }
 
     toast({
