@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { startOfYear, endOfYear, startOfMonth, endOfMonth, setMonth } from "date-fns";
+import { YearSelector } from "./YearSelector";
+import { MonthlyStats } from "./MonthlyStats";
+import { useState } from "react";
 
 interface WorkTypeAssignment {
   work_type_id: string;
@@ -34,36 +35,28 @@ interface Timesheet extends TimesheetData {
 }
 
 export const MonthlySummary = () => {
-  const currentDate = new Date();
-  const previousMonth = subMonths(currentDate, 1);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const years = [currentYear - 1, currentYear];
 
-  const { data: currentMonthData, isLoading: isLoadingCurrent } = useQuery({
-    queryKey: ["timesheets", format(currentDate, "yyyy-MM")],
-    queryFn: async () => fetchMonthData(currentDate)
+  const { data: yearData, isLoading } = useQuery({
+    queryKey: ["timesheets", selectedYear],
+    queryFn: async () => fetchYearData(selectedYear)
   });
 
-  const { data: previousMonthData, isLoading: isLoadingPrevious } = useQuery({
-    queryKey: ["timesheets", format(previousMonth, "yyyy-MM")],
-    queryFn: async () => fetchMonthData(previousMonth)
-  });
-
-  const fetchMonthData = async (date: Date) => {
-    const startDate = startOfMonth(date);
-    const endDate = endOfMonth(date);
+  const fetchYearData = async (year: number) => {
+    const startDate = startOfYear(new Date(year, 0));
+    const endDate = endOfYear(new Date(year, 0));
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
-    // First, get the work type assignments for the user
-    const { data: assignments, error: assignmentsError } = await supabase
+    const { data: assignments } = await supabase
       .from('work_type_assignments')
       .select('work_type_id, hourly_rate, fixed_rate')
       .eq('staff_id', user.id);
 
-    if (assignmentsError) throw assignmentsError;
-
-    // Then get the timesheets with work types
-    const { data, error } = await supabase
+    const { data: timesheets } = await supabase
       .from("timesheets")
       .select(`
         *,
@@ -76,29 +69,21 @@ export const MonthlySummary = () => {
       .gte("work_date", startDate.toISOString())
       .lte("work_date", endDate.toISOString());
 
-    if (error) throw error;
-
-    // Combine the data with proper typing
-    const timesheetsWithRates: Timesheet[] = (data as TimesheetData[]).map(timesheet => ({
-      ...timesheet,
-      work_type_assignments: assignments.filter(
-        assignment => assignment.work_type_id === timesheet.work_type_id
-      )
-    }));
-
-    // Also fetch expenses for the month
-    const { data: monthExpenses, error: expensesError } = await supabase
+    const { data: expenses } = await supabase
       .from("expenses")
       .select("*")
       .eq("staff_id", user.id)
       .gte("expense_date", startDate.toISOString())
       .lte("expense_date", endDate.toISOString());
 
-    if (expensesError) throw expensesError;
-
     return {
-      timesheets: timesheetsWithRates,
-      expenses: monthExpenses || []
+      timesheets: timesheets?.map(timesheet => ({
+        ...timesheet,
+        work_type_assignments: assignments?.filter(
+          assignment => assignment.work_type_id === timesheet.work_type_id
+        ) || []
+      })) as Timesheet[],
+      expenses: expenses || []
     };
   };
 
@@ -106,7 +91,6 @@ export const MonthlySummary = () => {
     if (!timesheets) return 0;
     
     return timesheets.reduce((total, timesheet) => {
-      // Handle "Other" work type with custom rate
       if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
         return total + (timesheet.custom_rate * timesheet.hours);
       }
@@ -127,7 +111,7 @@ export const MonthlySummary = () => {
     return expenses.reduce((total, expense) => total + expense.amount, 0);
   };
 
-  if (isLoadingCurrent || isLoadingPrevious) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-32" />
@@ -136,76 +120,54 @@ export const MonthlySummary = () => {
     );
   }
 
-  const renderMonthSummary = (data: any, date: Date) => {
-    if (!data) return null;
+  const renderMonthSummary = (month: number) => {
+    if (!yearData) return null;
 
-    const totalSalary = calculateTotalSalary(data.timesheets);
-    const totalExpenses = calculateTotalExpenses(data.expenses);
+    const monthStart = startOfMonth(new Date(selectedYear, month));
+    const monthEnd = endOfMonth(monthStart);
+
+    const monthTimesheets = yearData.timesheets.filter(
+      timesheet => {
+        const date = new Date(timesheet.work_date);
+        return date >= monthStart && date <= monthEnd;
+      }
+    );
+
+    const monthExpenses = yearData.expenses.filter(
+      expense => {
+        const date = new Date(expense.expense_date);
+        return date >= monthStart && date <= monthEnd;
+      }
+    );
+
+    const totalSalary = calculateTotalSalary(monthTimesheets);
+    const totalExpenses = calculateTotalExpenses(monthExpenses);
     const netAmount = totalSalary + totalExpenses;
 
     return (
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Salary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">
-              ${totalSalary.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              For {format(date, "MMMM yyyy")}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">
-              ${totalExpenses.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              For {format(date, "MMMM yyyy")}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Net Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-2xl font-bold ${netAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ${netAmount.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              For {format(date, "MMMM yyyy")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <MonthlyStats
+        totalSalary={totalSalary}
+        totalExpenses={totalExpenses}
+        netAmount={netAmount}
+        date={monthStart}
+      />
     );
   };
 
   return (
-    <Tabs defaultValue={format(currentDate, "yyyy-MM")}>
-      <TabsList>
-        <TabsTrigger value={format(currentDate, "yyyy-MM")}>
-          {format(currentDate, "MMMM yyyy")}
-        </TabsTrigger>
-        <TabsTrigger value={format(previousMonth, "yyyy-MM")}>
-          {format(previousMonth, "MMMM yyyy")}
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value={format(currentDate, "yyyy-MM")}>
-        {renderMonthSummary(currentMonthData, currentDate)}
-      </TabsContent>
-      <TabsContent value={format(previousMonth, "yyyy-MM")}>
-        {renderMonthSummary(previousMonthData, previousMonth)}
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-8">
+      <YearSelector
+        years={years}
+        selectedYear={selectedYear}
+        onYearChange={setSelectedYear}
+      />
+      <div className="space-y-8">
+        {Array.from({ length: 12 }, (_, i) => (
+          <div key={i}>
+            {renderMonthSummary(i)}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
