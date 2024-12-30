@@ -101,6 +101,11 @@ export const MonthlySummary = () => {
     if (!timesheets) return 0;
     
     return timesheets.reduce((total, timesheet) => {
+      // Handle "Other" work type with custom rate
+      if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
+        return total + (timesheet.custom_rate * timesheet.hours);
+      }
+
       const assignment = timesheet.work_type_assignments[0];
       if (!assignment) return total;
 
