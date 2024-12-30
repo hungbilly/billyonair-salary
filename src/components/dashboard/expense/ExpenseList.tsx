@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+interface MonthlyExpense {
+  month: string;
+  expenses: any[];
+  total: number;
+}
+
 export const ExpenseList = () => {
   const { data: expenses = [] } = useQuery({
     queryKey: ["expenses"],
@@ -20,7 +26,7 @@ export const ExpenseList = () => {
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("expense_date", { ascending: false });
 
       if (error) throw error;
       return data;
@@ -59,6 +65,29 @@ export const ExpenseList = () => {
     }
   };
 
+  const groupExpensesByMonth = (expenses: any[]): MonthlyExpense[] => {
+    const grouped = expenses.reduce((acc: { [key: string]: MonthlyExpense }, expense) => {
+      const monthKey = format(new Date(expense.expense_date), "MMMM yyyy");
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
+          month: monthKey,
+          expenses: [],
+          total: 0
+        };
+      }
+      
+      acc[monthKey].expenses.push(expense);
+      acc[monthKey].total += Number(expense.amount);
+      
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  };
+
+  const monthlyExpenses = groupExpensesByMonth(expenses);
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Expense History</h2>
@@ -74,32 +103,44 @@ export const ExpenseList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {expenses.map((expense) => (
-              <TableRow key={expense.id}>
-                <TableCell>
-                  {format(new Date(expense.expense_date), "MMM d, yyyy")}
-                </TableCell>
-                <TableCell>{expense.description}</TableCell>
-                <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge variant={getStatusColor(expense.status)}>
-                    {expense.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {expense.receipt_path && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        downloadReceipt(expense.receipt_path, expense.description)
-                      }
-                    >
-                      <FileDown className="h-4 w-4" />
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
+            {monthlyExpenses.map((monthGroup) => (
+              <>
+                <TableRow key={monthGroup.month} className="bg-muted/50">
+                  <TableCell colSpan={2} className="font-medium">
+                    {monthGroup.month}
+                  </TableCell>
+                  <TableCell colSpan={3} className="font-medium">
+                    Total: ${monthGroup.total.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+                {monthGroup.expenses.map((expense) => (
+                  <TableRow key={expense.id}>
+                    <TableCell>
+                      {format(new Date(expense.expense_date), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>{expense.description}</TableCell>
+                    <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(expense.status)}>
+                        {expense.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {expense.receipt_path && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            downloadReceipt(expense.receipt_path, expense.description)
+                          }
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </>
             ))}
           </TableBody>
         </Table>
