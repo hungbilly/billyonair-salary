@@ -53,12 +53,12 @@ export const TimesheetDownload = ({
           ? `Other: ${timesheet.description}`
           : timesheet.work_types.name,
         'Hours/Jobs': timesheet.hours,
-        'Rate': rate,
-        'Entry Total': entryTotal
+        'Rate': Number(rate),
+        'Entry Total': Number(entryTotal)
       };
     });
 
-    const monthTotal = timesheets.reduce((total: number, timesheet: Timesheet) =>
+    const monthTotal = timesheets.reduce((total: number, timesheet) =>
       total + calculateEntryTotal(timesheet, workTypeRates), 0 as number);
 
     data.push({
@@ -67,10 +67,10 @@ export const TimesheetDownload = ({
       'Work Type': '',
       'Hours/Jobs': '',
       'Rate': 'Monthly Total',
-      'Entry Total': monthTotal
+      'Entry Total': Number(monthTotal)
     });
 
-    // Create workbook
+    // Create workbook and worksheet
     const ws = XLSX.utils.json_to_sheet(data);
 
     // Format the Rate and Entry Total columns to show as currency
@@ -80,10 +80,13 @@ export const TimesheetDownload = ({
       const totalCell = ws[XLSX.utils.encode_cell({ r: R, c: 5 })]; // Entry Total column
       
       if (rateCell && typeof rateCell.v === 'number') {
-        rateCell.z = '$#,##0.00';
+        rateCell.z = '"$"#,##0.00';
+        if (R < range.e.r) { // Not the last row (Monthly Total row)
+          rateCell.z += timesheet.work_types.rate_type === 'hourly' ? '"/hr"' : '';
+        }
       }
       if (totalCell && typeof totalCell.v === 'number') {
-        totalCell.z = '$#,##0.00';
+        totalCell.z = '"$"#,##0.00';
       }
     }
 
