@@ -68,7 +68,7 @@ export const LoginForm = () => {
         if (error.message === "Invalid login credentials") {
           toast({
             title: "Login Failed",
-            description: "Email or password is incorrect. Please try again or sign up if you don't have an account.",
+            description: "Username or password is incorrect",
             variant: "destructive",
           });
         } else {
