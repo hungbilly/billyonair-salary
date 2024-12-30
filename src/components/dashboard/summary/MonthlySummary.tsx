@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { startOfYear, endOfYear, startOfMonth, endOfMonth, setMonth } from "date-fns";
+import { startOfYear, endOfYear, startOfMonth, endOfMonth } from "date-fns";
 import { YearSelector } from "./YearSelector";
 import { MonthlyStats } from "./MonthlyStats";
 import { useState } from "react";
@@ -150,6 +150,7 @@ export const MonthlySummary = () => {
         totalExpenses={totalExpenses}
         netAmount={netAmount}
         date={monthStart}
+        showTitle={month === 0} // Only show titles for January
       />
     );
   };
