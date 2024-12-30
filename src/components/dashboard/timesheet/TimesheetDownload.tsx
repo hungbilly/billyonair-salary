@@ -29,6 +29,15 @@ interface TimesheetDownloadProps {
   workTypeRates: Record<string, { hourly_rate?: number; fixed_rate?: number; }>;
 }
 
+interface TimesheetRow {
+  'Date': string;
+  'Time': string;
+  'Work Type': string;
+  'Hours/Jobs': number;
+  'Rate': number;
+  'Entry Total': number;
+}
+
 export const TimesheetDownload = ({ 
   timesheets,
   workTypeRates 
@@ -36,7 +45,8 @@ export const TimesheetDownload = ({
   const { toast } = useToast();
 
   const downloadTableData = (format: 'csv' | 'xlsx') => {
-    const data = timesheets.map(timesheet => {
+    // Create initial data with numeric values
+    const data: TimesheetRow[] = timesheets.map(timesheet => {
       const entryTotal = calculateEntryTotal(timesheet, workTypeRates);
       const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate
         ? timesheet.custom_rate
@@ -59,35 +69,41 @@ export const TimesheetDownload = ({
     });
 
     const monthTotal = timesheets.reduce((total: number, timesheet) =>
-      total + calculateEntryTotal(timesheet, workTypeRates), 0 as number);
-
-    data.push({
-      'Date': '',
-      'Time': '',
-      'Work Type': '',
-      'Hours/Jobs': '',
-      'Rate': 'Monthly Total',
-      'Entry Total': Number(monthTotal)
-    });
+      total + calculateEntryTotal(timesheet, workTypeRates), 0);
 
     // Create workbook and worksheet
     const ws = XLSX.utils.json_to_sheet(data);
 
-    // Format the Rate and Entry Total columns to show as currency
+    // Add the monthly total row after the worksheet is created
+    const totalRowIndex = data.length + 1;
+    XLSX.utils.sheet_add_json(ws, [{
+      'Date': '',
+      'Time': '',
+      'Work Type': '',
+      'Hours/Jobs': null,
+      'Rate': null,
+      'Entry Total': monthTotal
+    }], { skipHeader: true, origin: totalRowIndex });
+
+    // Format the Rate and Entry Total columns
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     for (let R = range.s.r; R <= range.e.r; R++) {
-      const rateCell = ws[XLSX.utils.encode_cell({ r: R, c: 4 })]; // Rate column
-      const totalCell = ws[XLSX.utils.encode_cell({ r: R, c: 5 })]; // Entry Total column
+      const rateCell = ws[XLSX.utils.encode_cell({ r: R, c: 4 })];
+      const totalCell = ws[XLSX.utils.encode_cell({ r: R, c: 5 })];
       
-      if (rateCell && typeof rateCell.v === 'number') {
-        rateCell.z = '"$"#,##0.00';
-        if (R < range.e.r) { // Not the last row (Monthly Total row)
+      if (rateCell) {
+        if (R === range.e.r) {
+          rateCell.v = 'Monthly Total';
+          rateCell.t = 's';
+        } else if (typeof rateCell.v === 'number') {
+          rateCell.z = '"$"#,##0.00';
           const currentTimesheet = timesheets[R];
-          if (currentTimesheet) {
-            rateCell.z += currentTimesheet.work_types.rate_type === 'hourly' ? '"/hr"' : '';
+          if (currentTimesheet && currentTimesheet.work_types.rate_type === 'hourly') {
+            rateCell.z += '"/hr"';
           }
         }
       }
+
       if (totalCell && typeof totalCell.v === 'number') {
         totalCell.z = '"$"#,##0.00';
       }
