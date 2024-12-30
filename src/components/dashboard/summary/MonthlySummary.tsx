@@ -4,6 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface WorkTypeAssignment {
+  hourly_rate: number | null;
+  fixed_rate: number | null;
+}
+
 interface Timesheet {
   id: string;
   hours: number;
@@ -11,10 +16,16 @@ interface Timesheet {
     name: string;
     rate_type: 'fixed' | 'hourly';
   };
-  work_type_assignments: {
-    hourly_rate: number | null;
-    fixed_rate: number | null;
-  }[];
+  work_type_assignments: WorkTypeAssignment[];
+  created_at: string;
+  custom_rate: number | null;
+  description: string | null;
+  employee_id: string;
+  end_time: string | null;
+  start_time: string | null;
+  updated_at: string;
+  work_date: string;
+  work_type_id: string;
 }
 
 export const MonthlySummary = () => {
@@ -28,6 +39,15 @@ export const MonthlySummary = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // First, get the work type assignments for the user
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('work_type_assignments')
+        .select('work_type_id, hourly_rate, fixed_rate')
+        .eq('staff_id', user.id);
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Then get the timesheets with work types
       const { data, error } = await supabase
         .from("timesheets")
         .select(`
@@ -35,19 +55,23 @@ export const MonthlySummary = () => {
           work_types (
             name,
             rate_type
-          ),
-          work_type_assignments (
-            hourly_rate,
-            fixed_rate
           )
         `)
         .eq("employee_id", user.id)
-        .eq("work_type_assignments.staff_id", user.id)
         .gte("work_date", startDate.toISOString())
         .lte("work_date", endDate.toISOString());
 
       if (error) throw error;
-      return data as Timesheet[];
+
+      // Combine the data
+      const timesheetsWithRates = data.map(timesheet => ({
+        ...timesheet,
+        work_type_assignments: assignments.filter(
+          assignment => assignment.work_type_id === timesheet.work_type_id
+        )
+      }));
+
+      return timesheetsWithRates as Timesheet[];
     }
   });
 
