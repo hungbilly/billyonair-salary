@@ -51,11 +51,21 @@ export const StaffSalaryReport = () => {
     queryFn: async () => {
       if (!selectedStaffId) return null;
 
+      console.log("Fetching salary data for staff:", selectedStaffId);
+
       const { data: timesheets, error: timesheetsError } = await supabase
         .from("timesheets")
         .select(`
-          *,
+          id,
+          work_date,
+          hours,
+          start_time,
+          end_time,
+          description,
+          custom_rate,
+          work_type_id,
           work_types (
+            id,
             name,
             rate_type,
             work_type_assignments (
@@ -67,7 +77,12 @@ export const StaffSalaryReport = () => {
         .eq("employee_id", selectedStaffId)
         .order("work_date", { ascending: false });
 
-      if (timesheetsError) throw timesheetsError;
+      if (timesheetsError) {
+        console.error("Error fetching timesheets:", timesheetsError);
+        throw timesheetsError;
+      }
+
+      console.log("Fetched timesheets:", timesheets);
 
       const { data: expenses, error: expensesError } = await supabase
         .from("expenses")
@@ -89,6 +104,10 @@ export const StaffSalaryReport = () => {
     if (!salaryData?.timesheets) return 0;
     
     return salaryData.timesheets.reduce((total, timesheet) => {
+      if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
+        return total + (timesheet.custom_rate * timesheet.hours);
+      }
+
       const assignments = timesheet.work_types.work_type_assignments;
       if (!assignments || assignments.length === 0) return total;
 
