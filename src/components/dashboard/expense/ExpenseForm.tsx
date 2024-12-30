@@ -1,152 +1,166 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-export const ExpenseForm = ({ onExpenseAdded }: { onExpenseAdded: () => void }) => {
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [receipt, setReceipt] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+interface ExpenseFormProps {
+  onSubmit: () => void;
+  expense?: any;
+}
+
+export const ExpenseForm = ({ onSubmit, expense }: ExpenseFormProps) => {
   const { toast } = useToast();
+  const form = useForm({
+    defaultValues: {
+      amount: expense?.amount || "",
+      description: expense?.description || "",
+      expense_date: expense?.expense_date || new Date().toISOString().split("T")[0],
+      receipt: null as File | null,
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !description || !date) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleSubmit = async (values: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
+      let receipt_path = expense?.receipt_path;
+      let original_filename = expense?.original_filename;
 
-      let receiptPath = null;
-      if (receipt) {
-        const fileExt = receipt.name.split('.').pop();
-        const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('expense_receipts')
-          .upload(fileName, receipt);
+      if (values.receipt) {
+        const file = values.receipt;
+        original_filename = file.name;
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from("expense_receipts")
+          .upload(fileName, file);
 
         if (uploadError) throw uploadError;
-        receiptPath = fileName;
+        receipt_path = fileName;
       }
 
-      const { error } = await supabase.from('expenses').insert({
-        staff_id: user.id,
-        amount: parseFloat(amount),
-        description,
-        expense_date: format(date, 'yyyy-MM-dd'),
-        receipt_path: receiptPath,
-      });
+      const expenseData = {
+        amount: values.amount,
+        description: values.description,
+        expense_date: values.expense_date,
+        receipt_path,
+        original_filename,
+        staff_id: (await supabase.auth.getUser()).data.user?.id,
+      };
 
-      if (error) throw error;
+      if (expense) {
+        const { error } = await supabase
+          .from("expenses")
+          .update(expenseData)
+          .eq("id", expense.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("expenses").insert(expenseData);
+        if (error) throw error;
+      }
 
       toast({
-        title: "Success",
-        description: "Expense submitted successfully",
+        title: `Expense ${expense ? "updated" : "created"} successfully`,
       });
-
-      setAmount("");
-      setDescription("");
-      setDate(new Date());
-      setReceipt(null);
-      onExpenseAdded();
+      onSubmit();
     } catch (error: any) {
-      console.error('Error submitting expense:', error);
+      console.error("Error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to submit expense",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Submit Expense</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Amount</label>
-            <Input
-              type="number"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter expense description"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(date) => date && setDate(date)}
-                  initialFocus
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount ($)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter amount"
+                  {...field}
                 />
-              </PopoverContent>
-            </Popover>
-          </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Receipt (optional)</label>
-            <Input
-              type="file"
-              accept="image/*,.pdf"
-              onChange={(e) => setReceipt(e.target.files?.[0] || null)}
-            />
-          </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Enter description" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Expense"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        <FormField
+          control={form.control}
+          name="expense_date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="receipt"
+          render={({ field: { value, onChange, ...field } }) => (
+            <FormItem>
+              <FormLabel>Receipt</FormLabel>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => onChange(e.target.files?.[0] || null)}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {expense?.receipt_path && (
+          <div className="text-sm text-gray-500">
+            Current receipt: {expense.original_filename || expense.receipt_path}
+          </div>
+        )}
+
+        <Button type="submit">
+          {expense ? "Update Expense" : "Create Expense"}
+        </Button>
+      </form>
+    </Form>
   );
 };
