@@ -18,6 +18,7 @@ interface Timesheet {
     rate_type: 'fixed' | 'hourly';
   };
   work_type_id: string;
+  custom_rate?: number | null;
 }
 
 interface MonthlySubmissionsProps {
@@ -44,12 +45,38 @@ export const MonthlySubmissions = ({
   // Calculate monthly total by summing up entry totals
   const calculateMonthTotal = (sheets: Timesheet[]) => {
     return sheets.reduce((total, timesheet) => {
+      console.log('MonthlySubmissions - Processing timesheet:', {
+        id: timesheet.id,
+        workType: timesheet.work_types.name,
+        hours: timesheet.hours,
+        custom_rate: timesheet.custom_rate
+      });
+
+      // Handle "Other" work type with custom rate
+      if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
+        const entryTotal = timesheet.custom_rate * timesheet.hours;
+        console.log('MonthlySubmissions - Custom rate calculation:', {
+          custom_rate: timesheet.custom_rate,
+          hours: timesheet.hours,
+          entryTotal
+        });
+        return total + entryTotal;
+      }
+
+      // Handle regular work types
       const rates = workTypeRates[timesheet.work_type_id];
       const rate = timesheet.work_types.rate_type === 'fixed' 
         ? rates?.fixed_rate 
         : rates?.hourly_rate;
       
       const entryTotal = rate ? rate * timesheet.hours : 0;
+      console.log('MonthlySubmissions - Regular rate calculation:', {
+        rate_type: timesheet.work_types.rate_type,
+        rate,
+        hours: timesheet.hours,
+        entryTotal
+      });
+
       return total + entryTotal;
     }, 0);
   };
