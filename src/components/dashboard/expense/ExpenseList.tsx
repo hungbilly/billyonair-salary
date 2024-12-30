@@ -3,15 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { FileDown, Pencil, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
@@ -19,17 +14,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { DeleteExpenseDialog } from "./DeleteExpenseDialog";
+import { EditExpenseDialog } from "./EditExpenseDialog";
+import { ExpenseRow } from "./ExpenseRow";
 
 interface MonthlyExpense {
   month: string;
@@ -39,7 +26,7 @@ interface MonthlyExpense {
 
 export const ExpenseList = () => {
   const [selectedExpense, setSelectedExpense] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [editingExpense, setEditingExpense] = useState<any | null>(null);
   
   const { data: expenses = [], refetch } = useQuery({
     queryKey: ["expenses"],
@@ -53,72 +40,6 @@ export const ExpenseList = () => {
       return data;
     },
   });
-
-  const downloadReceipt = async (receiptPath: string, description: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from("expense_receipts")
-        .download(receiptPath);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `receipt-${description}.${receiptPath.split(".").pop()}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error downloading receipt:", error);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedExpense) return;
-
-    try {
-      const { error } = await supabase
-        .from("expenses")
-        .delete()
-        .eq("id", selectedExpense);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Expense deleted successfully",
-      });
-      
-      refetch();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete expense",
-        variant: "destructive",
-      });
-    } finally {
-      setSelectedExpense(null);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "secondary";
-      case "rejected":
-        return "destructive";
-      default:
-        return "default";
-    }
-  };
-
-  const getFileName = (path: string) => {
-    if (!path) return "";
-    const parts = path.split("/");
-    return parts[parts.length - 1];
-  };
 
   const groupExpensesByMonth = (expenses: any[]): MonthlyExpense[] => {
     const grouped = expenses.reduce((acc: { [key: string]: MonthlyExpense }, expense) => {
@@ -171,60 +92,12 @@ export const ExpenseList = () => {
                 </TableHeader>
                 <TableBody>
                   {monthGroup.expenses.map((expense) => (
-                    <TableRow key={expense.id}>
-                      <TableCell>
-                        {format(new Date(expense.expense_date), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell>{expense.description}</TableCell>
-                      <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(expense.status)}>
-                          {expense.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {expense.receipt_path && (
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm text-gray-500">
-                              {getFileName(expense.receipt_path)}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                downloadReceipt(expense.receipt_path, expense.description)
-                              }
-                            >
-                              <FileDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              // TODO: Implement edit functionality
-                              toast({
-                                title: "Info",
-                                description: "Edit functionality coming soon",
-                              });
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedExpense(expense.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <ExpenseRow
+                      key={expense.id}
+                      expense={expense}
+                      onEdit={setEditingExpense}
+                      onDelete={setSelectedExpense}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -233,20 +106,18 @@ export const ExpenseList = () => {
         ))}
       </Accordion>
 
-      <AlertDialog open={!!selectedExpense} onOpenChange={() => setSelectedExpense(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this expense entry.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteExpenseDialog
+        expenseId={selectedExpense}
+        onOpenChange={() => setSelectedExpense(null)}
+        onDelete={refetch}
+      />
+
+      <EditExpenseDialog
+        expense={editingExpense}
+        isOpen={!!editingExpense}
+        onOpenChange={(open) => !open && setEditingExpense(null)}
+        onUpdate={refetch}
+      />
     </div>
   );
 };
