@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExpenseForm } from "./expense/ExpenseForm";
 import { ExpenseList } from "./expense/ExpenseList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MonthlySummary } from "./summary/MonthlySummary";
 
 export const StaffDashboard = () => {
   const [workTypes, setWorkTypes] = useState<any[]>([]);
@@ -125,11 +126,15 @@ export const StaffDashboard = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="timesheets">
+      <Tabs defaultValue="summary">
         <TabsList>
+          <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="timesheets">Timesheets</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
         </TabsList>
+        <TabsContent value="summary" className="space-y-6">
+          <MonthlySummary />
+        </TabsContent>
         <TabsContent value="timesheets" className="space-y-6">
           <TimesheetForm 
             workTypes={workTypes} 
