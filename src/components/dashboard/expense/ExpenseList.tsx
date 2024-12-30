@@ -17,6 +17,7 @@ import { useState } from "react";
 import { DeleteExpenseDialog } from "./DeleteExpenseDialog";
 import { EditExpenseDialog } from "./EditExpenseDialog";
 import { ExpenseRow } from "./ExpenseRow";
+import { format } from "date-fns";
 
 interface MonthlyExpense {
   month: string;
