@@ -52,9 +52,9 @@ export const TimesheetDownload = ({
         'Work Type': timesheet.work_types.name === "Other" && timesheet.description
           ? `Other: ${timesheet.description}`
           : timesheet.work_types.name,
-        'Hours/Jobs': Number(timesheet.hours),
-        'Rate': `$${rate.toFixed(2)}${timesheet.work_types.rate_type === 'hourly' ? '/hr' : ''}`,
-        'Entry Total': `$${entryTotal.toFixed(2)}`
+        'Hours/Jobs': timesheet.hours,
+        'Rate': rate,
+        'Entry Total': entryTotal
       };
     });
 
@@ -66,12 +66,27 @@ export const TimesheetDownload = ({
       'Time': '',
       'Work Type': '',
       'Hours/Jobs': '',
-      'Rate': 'Monthly Total:',
-      'Entry Total': `$${monthTotal.toFixed(2)}`
+      'Rate': 'Monthly Total',
+      'Entry Total': monthTotal
     });
 
     // Create workbook
     const ws = XLSX.utils.json_to_sheet(data);
+
+    // Format the Rate and Entry Total columns to show as currency
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      const rateCell = ws[XLSX.utils.encode_cell({ r: R, c: 4 })]; // Rate column
+      const totalCell = ws[XLSX.utils.encode_cell({ r: R, c: 5 })]; // Entry Total column
+      
+      if (rateCell && typeof rateCell.v === 'number') {
+        rateCell.z = '$#,##0.00';
+      }
+      if (totalCell && typeof totalCell.v === 'number') {
+        totalCell.z = '$#,##0.00';
+      }
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Timesheet');
 
