@@ -34,19 +34,18 @@ export const TimesheetDownload = ({
   const { toast } = useToast();
 
   const downloadTableData = (format: 'csv' | 'xlsx') => {
-    // Prepare the data
     const data = timesheets.map(timesheet => {
       const entryTotal = calculateEntryTotal(timesheet, workTypeRates);
-      const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate 
-        ? Number(timesheet.custom_rate) 
-        : (timesheet.work_types.rate_type === 'fixed' 
-          ? Number(workTypeRates[timesheet.work_type_id]?.fixed_rate || 0) 
-          : Number(workTypeRates[timesheet.work_type_id]?.hourly_rate || 0));
+      const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate
+        ? timesheet.custom_rate
+        : (timesheet.work_types.rate_type === 'fixed'
+          ? workTypeRates[timesheet.work_type_id]?.fixed_rate || 0
+          : workTypeRates[timesheet.work_type_id]?.hourly_rate || 0);
 
       return {
         'Date': new Date(timesheet.work_date).toLocaleDateString(),
-        'Time': timesheet.work_types.name === "Other" ? "N/A" : 
-          (timesheet.start_time && timesheet.end_time ? 
+        'Time': timesheet.work_types.name === "Other" ? "N/A" :
+          (timesheet.start_time && timesheet.end_time ?
             `${timesheet.start_time} - ${timesheet.end_time}` : "N/A"),
         'Work Type': timesheet.work_types.name === "Other" && timesheet.description
           ? `Other: ${timesheet.description}`
@@ -58,7 +57,7 @@ export const TimesheetDownload = ({
     });
 
     // Add monthly total row
-    const monthTotal = timesheets.reduce((total, timesheet) => 
+    const monthTotal = timesheets.reduce((total: number, timesheet) =>
       total + calculateEntryTotal(timesheet, workTypeRates), 0);
 
     data.push({
