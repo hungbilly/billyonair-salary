@@ -40,6 +40,22 @@ export const ProfileManagement = ({ user }: { user: any }) => {
 
   const changePassword = async () => {
     try {
+      // First verify the current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "Current password is incorrect",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If current password is correct, proceed with password update
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
