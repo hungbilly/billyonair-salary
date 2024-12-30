@@ -16,22 +16,35 @@ interface TimesheetFormProps {
     start_time: string | null;
     end_time: string | null;
     work_type_id: string;
+    description?: string;
+    custom_rate?: number;
   };
 }
 
 export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }: TimesheetFormProps) => {
-  const [selectedWorkType, setSelectedWorkType] = useState(editingTimesheet?.work_type_id || "");
-  const [hours, setHours] = useState(editingTimesheet ? editingTimesheet.hours.toString() : "");
-  const [date, setDate] = useState<Date | undefined>(
-    editingTimesheet ? new Date(editingTimesheet.work_date) : new Date()
-  );
-  const [startTime, setStartTime] = useState(editingTimesheet?.start_time || "");
-  const [endTime, setEndTime] = useState(editingTimesheet?.end_time || "");
+  const [selectedWorkType, setSelectedWorkType] = useState("");
+  const [hours, setHours] = useState("");
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [isFixedRate, setIsFixedRate] = useState(false);
   const [salary, setSalary] = useState<number | null>(null);
   const [description, setDescription] = useState("");
   const [rate, setRate] = useState("");
   const { toast } = useToast();
+
+  // Initialize form with editing values when available
+  useEffect(() => {
+    if (editingTimesheet) {
+      setSelectedWorkType(editingTimesheet.work_type_id || "");
+      setHours(editingTimesheet.hours?.toString() || "");
+      setDate(editingTimesheet.work_date ? new Date(editingTimesheet.work_date) : new Date());
+      setStartTime(editingTimesheet.start_time || "");
+      setEndTime(editingTimesheet.end_time || "");
+      setDescription(editingTimesheet.description || "");
+      setRate(editingTimesheet.custom_rate?.toString() || "");
+    }
+  }, [editingTimesheet]);
 
   useEffect(() => {
     const fetchWorkTypeRateType = async () => {
@@ -173,6 +186,7 @@ export const TimesheetForm = ({ workTypes, onTimesheetAdded, editingTimesheet }:
         });
       }
 
+      // Reset form
       setSelectedWorkType("");
       setHours("");
       setDate(new Date());

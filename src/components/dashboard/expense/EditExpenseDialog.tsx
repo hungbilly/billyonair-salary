@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,13 +29,20 @@ export const EditExpenseDialog = ({
   onOpenChange,
   onUpdate,
 }: EditExpenseDialogProps) => {
-  const [amount, setAmount] = useState(expense?.amount?.toString() || "");
-  const [description, setDescription] = useState(expense?.description || "");
-  const [date, setDate] = useState<Date>(
-    expense?.expense_date ? new Date(expense.expense_date) : new Date()
-  );
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Update form values when expense prop changes
+  useEffect(() => {
+    if (expense) {
+      setAmount(expense.amount?.toString() || "");
+      setDescription(expense.description || "");
+      setDate(expense.expense_date ? new Date(expense.expense_date) : new Date());
+    }
+  }, [expense]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +64,7 @@ export const EditExpenseDialog = ({
           description,
           expense_date: format(date, "yyyy-MM-dd"),
         })
-        .eq("id", expense.id);
+        .eq("id", expense?.id);
 
       if (error) throw error;
 
