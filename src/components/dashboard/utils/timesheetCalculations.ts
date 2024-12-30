@@ -9,17 +9,19 @@ export const calculateEntryTotal = (
     work_type_id: string;
   },
   workTypeRates: Record<string, { hourly_rate?: number; fixed_rate?: number; }>
-) => {
+): number => {
   if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
-    return timesheet.custom_rate * timesheet.hours;
+    const total = Number(timesheet.custom_rate) * Number(timesheet.hours);
+    return isNaN(total) ? 0 : total;
   }
 
   const rates = workTypeRates[timesheet.work_type_id];
   const rate = timesheet.work_types.rate_type === 'fixed' 
-    ? rates?.fixed_rate 
-    : rates?.hourly_rate;
+    ? Number(rates?.fixed_rate || 0)
+    : Number(rates?.hourly_rate || 0);
   
-  return rate ? rate * timesheet.hours : 0;
+  const total = rate * Number(timesheet.hours);
+  return isNaN(total) ? 0 : total;
 };
 
 export const formatTimeRange = (
