@@ -52,13 +52,18 @@ export const LoginForm = () => {
     setLoading(true);
     
     try {
+      console.log("Attempting login with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error("Login error:", error);
+        console.error("Login error details:", {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         
         if (error.message === "Invalid login credentials") {
           toast({
@@ -77,6 +82,7 @@ export const LoginForm = () => {
       }
 
       if (data?.user) {
+        console.log("Login successful for user:", data.user.email);
         toast({
           title: "Success",
           description: "Logged in successfully",
@@ -100,6 +106,7 @@ export const LoginForm = () => {
     setLoading(true);
     
     try {
+      console.log("Attempting signup with email:", email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -118,6 +125,7 @@ export const LoginForm = () => {
         return;
       }
 
+      console.log("Signup successful, user data:", data);
       toast({
         title: "Success",
         description: "Please check your email to confirm your account",
