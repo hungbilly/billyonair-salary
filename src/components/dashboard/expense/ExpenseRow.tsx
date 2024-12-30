@@ -23,21 +23,18 @@ export const ExpenseRow = ({ expense, onEdit, onDelete }: ExpenseRowProps) => {
     }
   };
 
-  const downloadReceipt = async (receiptPath: string, description: string) => {
+  const downloadReceipt = async (receiptPath: string) => {
     try {
       const { data, error } = await supabase.storage
         .from("expense_receipts")
         .download(receiptPath);
 
       if (error) throw error;
-
-      // Use the original filename from the receipt path
-      const originalFilename = receiptPath.split("/").pop() || "";
       
       const url = URL.createObjectURL(data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = originalFilename;
+      a.download = expense.original_filename || receiptPath.split("/").pop() || "";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -63,14 +60,12 @@ export const ExpenseRow = ({ expense, onEdit, onDelete }: ExpenseRowProps) => {
         {expense.receipt_path && (
           <div className="flex flex-col gap-2">
             <span className="text-sm text-gray-500">
-              {expense.receipt_path.split("/").pop()}
+              {expense.original_filename || expense.receipt_path.split("/").pop()}
             </span>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() =>
-                downloadReceipt(expense.receipt_path, expense.description)
-              }
+              onClick={() => downloadReceipt(expense.receipt_path)}
             >
               <FileDown className="h-4 w-4" />
             </Button>

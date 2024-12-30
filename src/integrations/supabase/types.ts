@@ -16,6 +16,7 @@ export type Database = {
           description: string
           expense_date: string
           id: string
+          original_filename: string | null
           receipt_path: string | null
           staff_id: string
           status: string | null
@@ -27,6 +28,7 @@ export type Database = {
           description: string
           expense_date: string
           id?: string
+          original_filename?: string | null
           receipt_path?: string | null
           staff_id: string
           status?: string | null
@@ -38,6 +40,7 @@ export type Database = {
           description?: string
           expense_date?: string
           id?: string
+          original_filename?: string | null
           receipt_path?: string | null
           staff_id?: string
           status?: string | null
