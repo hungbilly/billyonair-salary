@@ -12,6 +12,15 @@ import { useState, useEffect } from "react";
 import { TimesheetForm } from "./TimesheetForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import * as XLSX from 'xlsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Timesheet {
   id: string;
@@ -25,6 +34,7 @@ interface Timesheet {
   };
   work_type_id: string;
   custom_rate?: number | null;
+  description?: string | null;
 }
 
 interface MonthlyTableProps {
@@ -41,11 +51,6 @@ export const MonthlyTable = ({
   const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
   const [workTypes, setWorkTypes] = useState<any[]>([]);
   const { toast } = useToast();
-
-  console.log('MonthlyTable - Initial props:', {
-    timesheets,
-    workTypeRates
-  });
 
   useEffect(() => {
     const fetchWorkTypes = async () => {
@@ -82,6 +87,72 @@ export const MonthlyTable = ({
     fetchWorkTypes();
   }, [toast]);
 
+  const calculateEntryTotal = (timesheet: Timesheet) => {
+    if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
+      return timesheet.custom_rate * timesheet.hours;
+    }
+
+    const rates = workTypeRates[timesheet.work_type_id];
+    const rate = timesheet.work_types.rate_type === 'fixed' 
+      ? rates?.fixed_rate 
+      : rates?.hourly_rate;
+    
+    return rate ? rate * timesheet.hours : 0;
+  };
+
+  const downloadTableData = (format: 'csv' | 'xlsx') => {
+    // Prepare the data
+    const data = timesheets.map(timesheet => {
+      const entryTotal = calculateEntryTotal(timesheet);
+      const rate = timesheet.work_types.name === "Other" && timesheet.custom_rate 
+        ? timesheet.custom_rate 
+        : (timesheet.work_types.rate_type === 'fixed' 
+          ? workTypeRates[timesheet.work_type_id]?.fixed_rate 
+          : workTypeRates[timesheet.work_type_id]?.hourly_rate);
+
+      return {
+        'Date': new Date(timesheet.work_date).toLocaleDateString(),
+        'Time': timesheet.work_types.name === "Other" ? "N/A" : 
+          (timesheet.start_time && timesheet.end_time ? 
+            `${timesheet.start_time} - ${timesheet.end_time}` : "N/A"),
+        'Work Type': timesheet.work_types.name === "Other" && timesheet.description
+          ? `Other: ${timesheet.description}`
+          : timesheet.work_types.name,
+        'Hours/Jobs': timesheet.hours,
+        'Rate': `$${rate?.toFixed(2)}${timesheet.work_types.rate_type === 'hourly' ? '/hr' : ''}`,
+        'Entry Total': `$${entryTotal.toFixed(2)}`
+      };
+    });
+
+    // Add monthly total row
+    const monthTotal = timesheets.reduce((total, timesheet) => total + calculateEntryTotal(timesheet), 0);
+    data.push({
+      'Date': '',
+      'Time': '',
+      'Work Type': '',
+      'Hours/Jobs': '',
+      'Rate': 'Monthly Total:',
+      'Entry Total': `$${monthTotal.toFixed(2)}`
+    });
+
+    // Create workbook
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Timesheet');
+
+    // Download file
+    if (format === 'xlsx') {
+      XLSX.writeFile(wb, 'timesheet.xlsx');
+    } else {
+      XLSX.writeFile(wb, 'timesheet.csv');
+    }
+
+    toast({
+      title: "Success",
+      description: `Timesheet exported as ${format.toUpperCase()}`,
+    });
+  };
+
   const monthTotal = timesheets.reduce((total, timesheet) => {
     const rates = workTypeRates[timesheet.work_type_id];
     
@@ -96,7 +167,6 @@ export const MonthlyTable = ({
       custom_rate: timesheet.custom_rate
     });
 
-    // Handle "Other" work type with custom rate
     if (timesheet.work_types.name === "Other" && timesheet.custom_rate) {
       const entryTotal = timesheet.custom_rate * timesheet.hours;
       console.log('MonthlyTable - Custom rate calculation:', {
@@ -108,7 +178,6 @@ export const MonthlyTable = ({
       return total + entryTotal;
     }
 
-    // Handle regular work types
     const rate = timesheet.work_types.rate_type === 'fixed' 
       ? rates?.fixed_rate 
       : rates?.hourly_rate;
@@ -131,6 +200,25 @@ export const MonthlyTable = ({
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => downloadTableData('csv')}>
+              Download as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => downloadTableData('xlsx')}>
+              Download as Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
