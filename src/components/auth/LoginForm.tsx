@@ -12,21 +12,58 @@ export const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const validateInputs = () => {
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateInputs()) return;
+    
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login error:", error);
+        
         if (error.message === "Invalid login credentials") {
           toast({
             title: "Login Failed",
-            description: "Incorrect email or password. Please try again.",
+            description: "Email or password is incorrect. Please try again or sign up if you don't have an account.",
             variant: "destructive",
           });
         } else {
@@ -38,13 +75,15 @@ export const LoginForm = () => {
         }
         return;
       }
-      
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      });
+
+      if (data?.user) {
+        toast({
+          title: "Success",
+          description: "Logged in successfully",
+        });
+      }
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Unexpected login error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -56,39 +95,12 @@ export const LoginForm = () => {
   };
 
   const handleSignUp = async () => {
-    if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please enter both email and password",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateInputs()) return;
 
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -96,17 +108,25 @@ export const LoginForm = () => {
         },
       });
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error("Signup error:", error);
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Success",
-        description: "Check your email to confirm your account",
+        description: "Please check your email to confirm your account",
       });
     } catch (error: any) {
-      console.error("Signup error:", error);
+      console.error("Unexpected signup error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
