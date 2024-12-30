@@ -25,13 +25,20 @@ interface MonthlyExpense {
   total: number;
 }
 
-export const ExpenseList = () => {
+interface ExpenseListProps {
+  expenses?: any[];
+  onExpenseUpdated?: () => void;
+}
+
+export const ExpenseList = ({ expenses: propExpenses, onExpenseUpdated }: ExpenseListProps) => {
   const [selectedExpense, setSelectedExpense] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<any | null>(null);
   
-  const { data: expenses = [], refetch } = useQuery({
+  const { data: fetchedExpenses = [], refetch } = useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
+      if (propExpenses) return propExpenses;
+      
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
@@ -40,7 +47,17 @@ export const ExpenseList = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !propExpenses
   });
+
+  const expenses = propExpenses || fetchedExpenses;
+  const handleRefetch = () => {
+    if (onExpenseUpdated) {
+      onExpenseUpdated();
+    } else {
+      refetch();
+    }
+  };
 
   const groupExpensesByMonth = (expenses: any[]): MonthlyExpense[] => {
     const grouped = expenses.reduce((acc: { [key: string]: MonthlyExpense }, expense) => {
@@ -110,14 +127,14 @@ export const ExpenseList = () => {
       <DeleteExpenseDialog
         expenseId={selectedExpense}
         onOpenChange={() => setSelectedExpense(null)}
-        onDelete={refetch}
+        onDelete={handleRefetch}
       />
 
       <EditExpenseDialog
         expense={editingExpense}
         isOpen={!!editingExpense}
         onOpenChange={(open) => !open && setEditingExpense(null)}
-        onUpdate={refetch}
+        onUpdate={handleRefetch}
       />
     </div>
   );
