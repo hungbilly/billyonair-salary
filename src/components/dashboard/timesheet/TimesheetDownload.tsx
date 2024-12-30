@@ -10,20 +10,22 @@ import * as XLSX from 'xlsx';
 import { useToast } from "@/components/ui/use-toast";
 import { calculateEntryTotal } from "../utils/timesheetCalculations";
 
+interface Timesheet {
+  work_date: string;
+  hours: number;
+  start_time: string | null;
+  end_time: string | null;
+  work_types: {
+    name: string;
+    rate_type: 'fixed' | 'hourly';
+  };
+  work_type_id: string;
+  custom_rate?: number | null;
+  description?: string | null;
+}
+
 interface TimesheetDownloadProps {
-  timesheets: Array<{
-    work_date: string;
-    hours: number;
-    start_time: string | null;
-    end_time: string | null;
-    work_types: {
-      name: string;
-      rate_type: 'fixed' | 'hourly';
-    };
-    work_type_id: string;
-    custom_rate?: number | null;
-    description?: string | null;
-  }>;
+  timesheets: Timesheet[];
   workTypeRates: Record<string, { hourly_rate?: number; fixed_rate?: number; }>;
 }
 
@@ -56,9 +58,8 @@ export const TimesheetDownload = ({
       };
     });
 
-    // Add monthly total row
-    const monthTotal = timesheets.reduce((total: number, timesheet) =>
-      total + calculateEntryTotal(timesheet, workTypeRates), 0);
+    const monthTotal = timesheets.reduce((total: number, timesheet: Timesheet) =>
+      total + calculateEntryTotal(timesheet, workTypeRates), 0 as number);
 
     data.push({
       'Date': '',
