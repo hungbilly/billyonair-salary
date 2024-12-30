@@ -23,12 +23,6 @@ export const ExpenseRow = ({ expense, onEdit, onDelete }: ExpenseRowProps) => {
     }
   };
 
-  const getFileName = (path: string) => {
-    if (!path) return "";
-    const parts = path.split("/");
-    return parts[parts.length - 1];
-  };
-
   const downloadReceipt = async (receiptPath: string, description: string) => {
     try {
       const { data, error } = await supabase.storage
@@ -37,10 +31,13 @@ export const ExpenseRow = ({ expense, onEdit, onDelete }: ExpenseRowProps) => {
 
       if (error) throw error;
 
+      // Use the original filename from the receipt path
+      const originalFilename = receiptPath.split("/").pop() || "";
+      
       const url = URL.createObjectURL(data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `receipt-${description}.${receiptPath.split(".").pop()}`;
+      a.download = originalFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -66,7 +63,7 @@ export const ExpenseRow = ({ expense, onEdit, onDelete }: ExpenseRowProps) => {
         {expense.receipt_path && (
           <div className="flex flex-col gap-2">
             <span className="text-sm text-gray-500">
-              {getFileName(expense.receipt_path)}
+              {expense.receipt_path.split("/").pop()}
             </span>
             <Button
               variant="ghost"
