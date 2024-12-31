@@ -44,6 +44,16 @@ export const LoginForm = () => {
     return true;
   };
 
+  const clearSession = async () => {
+    try {
+      // Clear any existing session data
+      await supabase.auth.signOut();
+      localStorage.removeItem('supabase.auth.token');
+    } catch (error) {
+      console.log("Error clearing session:", error);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -52,6 +62,9 @@ export const LoginForm = () => {
     setLoading(true);
     
     try {
+      // Clear any existing session before attempting to log in
+      await clearSession();
+
       console.log("Attempting login with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -60,6 +73,10 @@ export const LoginForm = () => {
 
       if (error) {
         console.error("Login error:", error);
+        
+        if (error.message.includes("session_not_found")) {
+          await clearSession();
+        }
         
         toast({
           title: "Login Failed",
@@ -78,6 +95,7 @@ export const LoginForm = () => {
       }
     } catch (error: any) {
       console.error("Unexpected login error:", error);
+      await clearSession();
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
