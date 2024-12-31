@@ -12,6 +12,7 @@ import { StaffList } from "./StaffList";
 import { StaffSalaryReport } from "./StaffSalaryReport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileManagement } from "./profile/ProfileManagement";
+import { SettingsDialog } from "./settings/SettingsDialog";
 
 export const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -76,9 +77,7 @@ export const AdminDashboard = () => {
         <div className="flex gap-2">
           <CreateUserDialog onUserCreated={fetchUsers} />
           <CreateWorkTypeDialog />
-          <Button variant="outline">
-            <Settings className="mr-2 h-4 w-4" /> Settings
-          </Button>
+          <SettingsDialog currentUser={currentUser} />
         </div>
       </div>
 

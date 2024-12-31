@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { DashboardCards } from "./DashboardCards";
@@ -12,6 +10,7 @@ import { StaffList } from "./StaffList";
 import { StaffSalaryReport } from "./StaffSalaryReport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileManagement } from "./profile/ProfileManagement";
+import { SettingsDialog } from "./settings/SettingsDialog";
 
 export const EmployerDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -76,9 +75,7 @@ export const EmployerDashboard = () => {
         <div className="flex gap-2">
           <CreateUserDialog onUserCreated={fetchUsers} />
           <CreateWorkTypeDialog />
-          <Button variant="outline">
-            <Settings className="mr-2 h-4 w-4" /> Settings
-          </Button>
+          <SettingsDialog currentUser={currentUser} />
         </div>
       </div>
 
