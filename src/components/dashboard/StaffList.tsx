@@ -17,21 +17,12 @@ export const StaffList = ({ users }: StaffListProps) => {
 
   const handleDelete = async (userId: string) => {
     try {
-      // First, delete all work type assignments for this user
-      const { error: assignmentsError } = await supabase
-        .from("work_type_assignments")
-        .delete()
-        .eq("staff_id", userId);
-
-      if (assignmentsError) throw assignmentsError;
-
-      // Then delete the profile
-      const { error: profileError } = await supabase
+      const { error } = await supabase
         .from("profiles")
         .delete()
         .eq("id", userId);
 
-      if (profileError) throw profileError;
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -40,7 +31,6 @@ export const StaffList = ({ users }: StaffListProps) => {
 
       window.location.reload();
     } catch (error: any) {
-      console.error("Error deleting staff member:", error);
       toast({
         title: "Error",
         description: error.message,
