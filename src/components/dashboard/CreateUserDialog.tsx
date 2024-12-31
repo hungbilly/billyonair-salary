@@ -18,10 +18,21 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState<UserRole>("staff");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const resetForm = () => {
+    setEmail("");
+    setPassword("");
+    setFullName("");
+    setPhoneNumber("");
+    setRole("staff");
+  };
 
   const createUser = async () => {
     try {
+      setIsLoading(true);
+
       if (!email || !password || !fullName) {
         toast({
           title: "Error",
@@ -31,14 +42,50 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
         return;
       }
 
+      // First check if user exists
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .single();
+
+      if (existingUser) {
+        toast({
+          title: "Error",
+          description: "A user with this email already exists",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create the user in auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: role,
+          },
+        },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
+      if (authError) {
+        if (authError.message.includes("already registered")) {
+          toast({
+            title: "Error",
+            description: "A user with this email already exists",
+            variant: "destructive",
+          });
+        } else {
+          throw authError;
+        }
+        return;
+      }
+
+      if (!authData.user) {
+        throw new Error("Failed to create user");
+      }
 
       // Update the user's profile
       const { error: profileError } = await supabase
@@ -50,26 +97,30 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
         })
         .eq("id", authData.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        // Try to delete the auth user if profile update fails
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw new Error("Failed to create user profile");
+      }
 
       toast({
         title: "Success",
         description: "User created successfully",
       });
 
-      setEmail("");
-      setPassword("");
-      setFullName("");
-      setPhoneNumber("");
-      setRole("staff");
+      resetForm();
       setIsDialogOpen(false);
       onUserCreated();
     } catch (error: any) {
+      console.error("Create user error:", error);
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,8 +188,8 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={createUser} className="w-full">
-            Create User
+          <Button onClick={createUser} className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create User"}
           </Button>
         </div>
       </DialogContent>
