@@ -42,23 +42,7 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
         return;
       }
 
-      // First check if user exists
-      const { data: existingUser } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", email)
-        .single();
-
-      if (existingUser) {
-        toast({
-          title: "Error",
-          description: "A user with this email already exists",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create the user in auth
+      // Create the user in auth first
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
