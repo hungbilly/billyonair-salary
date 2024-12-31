@@ -18,10 +18,13 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState<UserRole>("staff");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const createUser = async () => {
     try {
+      setIsLoading(true);
+
       if (!email || !password || !fullName) {
         toast({
           title: "Error",
@@ -32,13 +35,35 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
       }
 
       // Create the user in auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email,
         password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+        },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
+      if (authError) {
+        if (authError.message.includes("already exists")) {
+          toast({
+            title: "Error",
+            description: "A user with this email already exists",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: authError.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (!authData.user) {
+        throw new Error("Failed to create user");
+      }
 
       // Update the user's profile
       const { error: profileError } = await supabase
@@ -65,11 +90,14 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
       setIsDialogOpen(false);
       onUserCreated();
     } catch (error: any) {
+      console.error("Error creating user:", error);
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,8 +165,8 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={createUser} className="w-full">
-            Create User
+          <Button onClick={createUser} className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create User"}
           </Button>
         </div>
       </DialogContent>
