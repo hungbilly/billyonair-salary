@@ -234,7 +234,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ensure_other_work_type: {
+        Args: {
+          creator_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       user_role: "admin" | "employer" | "staff"
