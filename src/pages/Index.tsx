@@ -114,14 +114,31 @@ const Index = () => {
 
   const handleLogout = async () => {
     try {
+      setLoading(true);
+      // Clear local session state first
+      setSession(null);
+      setUserRole(null);
+      
+      // Remove any stored tokens
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        // If we get a session_not_found error, we can ignore it since we've already cleared local state
+        if (!error.message.includes('session_not_found')) {
+          throw error;
+        }
+      }
     } catch (error: any) {
+      console.error("Logout error:", error);
       toast({
         title: "Error",
-        description: "Failed to log out",
+        description: "Failed to log out properly, but session has been cleared",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
