@@ -34,13 +34,14 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
         return;
       }
 
-      // Create the user in auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create the user using signUp
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: fullName,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
       });
 
