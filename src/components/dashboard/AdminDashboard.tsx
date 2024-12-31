@@ -11,6 +11,7 @@ import { WorkTypesList } from "./WorkTypesList";
 import { StaffList } from "./StaffList";
 import { StaffSalaryReport } from "./StaffSalaryReport";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProfileManagement } from "./profile/ProfileManagement";
 
 export const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -90,6 +91,7 @@ export const AdminDashboard = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="salary-report">Salary Report</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
           <div className="grid gap-6 md:grid-cols-2">
@@ -100,6 +102,9 @@ export const AdminDashboard = () => {
         </TabsContent>
         <TabsContent value="salary-report">
           <StaffSalaryReport />
+        </TabsContent>
+        <TabsContent value="profile">
+          {currentUser && <ProfileManagement user={currentUser} />}
         </TabsContent>
       </Tabs>
     </div>
