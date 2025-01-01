@@ -102,18 +102,24 @@ export const LoginForm = () => {
           return;
         }
 
-        // Update the auth session with the user's role
-        const { data: { session }, error: updateError } = await supabase.auth.setSession({
-          ...authData,
-          user: {
-            ...authData.user,
-            role: profileData.role // Add role from profiles table
-          }
-        });
-
-        if (updateError) {
-          console.error("Error updating session:", updateError);
+        // Get the current session
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error getting current session:", sessionError);
           return;
+        }
+
+        if (currentSession) {
+          // Update user metadata in the session
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { role: profileData.role }
+          });
+
+          if (updateError) {
+            console.error("Error updating user metadata:", updateError);
+            return;
+          }
         }
 
         console.log("Login successful for user:", authData.user.email, "with role:", profileData?.role);
