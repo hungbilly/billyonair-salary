@@ -14,11 +14,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseFormProps {
-  onExpenseAdded: () => void;
+  onSubmit: () => void;
   expense?: any;
 }
 
-export const ExpenseForm = ({ onExpenseAdded, expense }: ExpenseFormProps) => {
+export const ExpenseForm = ({ onSubmit, expense }: ExpenseFormProps) => {
   const { toast } = useToast();
   const form = useForm({
     defaultValues: {
@@ -71,7 +71,7 @@ export const ExpenseForm = ({ onExpenseAdded, expense }: ExpenseFormProps) => {
       toast({
         title: `Expense ${expense ? "updated" : "created"} successfully`,
       });
-      onExpenseAdded();
+      onSubmit();
     } catch (error: any) {
       console.error("Error:", error);
       toast({
