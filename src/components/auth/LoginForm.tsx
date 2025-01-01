@@ -46,7 +46,6 @@ export const LoginForm = () => {
 
   const clearSession = async () => {
     try {
-      // Clear any existing session data
       await supabase.auth.signOut();
       localStorage.removeItem('supabase.auth.token');
     } catch (error) {
@@ -62,19 +61,18 @@ export const LoginForm = () => {
     setLoading(true);
     
     try {
-      // Clear any existing session before attempting to log in
       await clearSession();
 
       console.log("Attempting login with email:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error("Login error:", error);
+      if (authError) {
+        console.error("Login error:", authError);
         
-        if (error.message.includes("session_not_found")) {
+        if (authError.message.includes("session_not_found")) {
           await clearSession();
         }
         
@@ -86,8 +84,25 @@ export const LoginForm = () => {
         return;
       }
 
-      if (data?.user) {
-        console.log("Login successful for user:", data.user.email);
+      if (authData?.user) {
+        // Fetch the user's profile to get their role
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Error fetching user profile:", profileError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch user role",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Login successful for user:", authData.user.email, "with role:", profileData?.role);
         toast({
           title: "Success",
           description: "Logged in successfully",
