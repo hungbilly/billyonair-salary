@@ -88,7 +88,7 @@ export const LoginForm = () => {
         // Fetch the user's profile to get their role
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, full_name')
           .eq('id', authData.user.id)
           .single();
 
@@ -99,6 +99,20 @@ export const LoginForm = () => {
             description: "Failed to fetch user role",
             variant: "destructive",
           });
+          return;
+        }
+
+        // Update the auth session with the user's role
+        const { data: { session }, error: updateError } = await supabase.auth.setSession({
+          ...authData,
+          user: {
+            ...authData.user,
+            role: profileData.role // Add role from profiles table
+          }
+        });
+
+        if (updateError) {
+          console.error("Error updating session:", updateError);
           return;
         }
 
