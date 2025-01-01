@@ -8,13 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { WorkType, Timesheet, WorkTypeRates } from "./types";
+import { ExpenseForm } from "./expense/ExpenseForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const StaffDashboard = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const [workTypeRates, setWorkTypeRates] = useState<WorkTypeRates>({});
 
-  // Fetch work types for the current user
   const { data: workTypes = [] } = useQuery<WorkType[]>({
     queryKey: ["workTypes"],
     queryFn: async () => {
@@ -131,6 +132,11 @@ export const StaffDashboard = () => {
     refetchTimesheets();
   };
 
+  const handleExpenseAdded = () => {
+    // This will trigger a refetch of the expense list
+    window.location.reload();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -158,7 +164,17 @@ export const StaffDashboard = () => {
           </div>
         </TabsContent>
         <TabsContent value="expenses">
-          <ExpenseList />
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Submit Expense</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExpenseForm onExpenseAdded={handleExpenseAdded} />
+              </CardContent>
+            </Card>
+            <ExpenseList />
+          </div>
         </TabsContent>
         <TabsContent value="profile">
           {currentUser && <ProfileManagement user={currentUser} />}
