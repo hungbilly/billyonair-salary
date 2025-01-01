@@ -18,10 +18,13 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState<UserRole>("staff");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const createUser = async () => {
     try {
+      setIsLoading(true);
+      
       if (!email || !password || !fullName) {
         toast({
           title: "Error",
@@ -35,6 +38,12 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: role,
+          },
+        },
       });
 
       if (authError) throw authError;
@@ -54,7 +63,7 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
 
       toast({
         title: "Success",
-        description: "User created successfully",
+        description: "User created successfully. They will need to verify their email before logging in.",
       });
 
       setEmail("");
@@ -65,11 +74,14 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
       setIsDialogOpen(false);
       onUserCreated();
     } catch (error: any) {
+      console.error("Error creating user:", error);
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -92,6 +104,7 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Enter full name"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -102,6 +115,7 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -112,6 +126,7 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -122,11 +137,12 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="Enter phone number"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
+            <Select value={role} onValueChange={(value: UserRole) => setRole(value)} disabled={isLoading}>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -137,8 +153,8 @@ export const CreateUserDialog = ({ onUserCreated }: { onUserCreated: () => void 
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={createUser} className="w-full">
-            Create User
+          <Button onClick={createUser} className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create User"}
           </Button>
         </div>
       </DialogContent>
